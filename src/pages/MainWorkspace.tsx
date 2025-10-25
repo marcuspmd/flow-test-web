@@ -16,6 +16,7 @@ const WorkspaceWrapper = styled.div`
   overflow: hidden;
   background: ${({ theme }) => theme['primary-theme']};
   color: ${({ theme }) => theme['primary-text']};
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 `;
 
 const SidebarContainer = styled.div<{ $width: number }>`
@@ -23,6 +24,8 @@ const SidebarContainer = styled.div<{ $width: number }>`
   height: 100%;
   position: relative;
   flex-shrink: 0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  z-index: 10;
 `;
 
 const DragHandle = styled.div`
@@ -30,15 +33,41 @@ const DragHandle = styled.div`
   right: 0;
   top: 0;
   bottom: 0;
-  width: 4px;
+  width: 5px;
   cursor: col-resize;
   z-index: 100;
   background: transparent;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 
-  &:hover,
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 40px;
+    background: ${({ theme }) => theme['secondary-text']};
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover {
+    background: ${({ theme }) => theme.brand}22;
+
+    &::before {
+      opacity: 0.4;
+      background: ${({ theme }) => theme.brand};
+    }
+  }
+
   &:active {
-    background: ${({ theme }) => theme.brand};
+    background: ${({ theme }) => theme.brand}44;
+
+    &::before {
+      opacity: 0.7;
+    }
   }
 `;
 
@@ -47,6 +76,7 @@ const MainSection = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: ${({ theme }) => theme['primary-theme']};
 `;
 
 const TabsContainer = styled.div`
@@ -55,15 +85,26 @@ const TabsContainer = styled.div`
   background: ${({ theme }) => theme['sidebar-background']};
   border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
   overflow-x: auto;
-  min-height: 40px;
+  min-height: 42px;
+  padding: 0 8px;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
   &::-webkit-scrollbar {
-    height: 4px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
   }
 
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme['layout-border']};
-    border-radius: 2px;
+    border-radius: 3px;
+
+    &:hover {
+      background: ${({ theme }) => theme['secondary-text']};
+    }
   }
 `;
 
@@ -71,33 +112,45 @@ const Tab = styled.div<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: 8px 14px;
   font-size: 13px;
   cursor: pointer;
-  border-right: 1px solid ${({ theme }) => theme['layout-border']};
   background: ${({ $active, theme }) => ($active ? theme['primary-theme'] : 'transparent')};
+  border-radius: 6px 6px 0 0;
   border-bottom: ${({ $active, theme }) => ($active ? `2px solid ${theme.brand}` : '2px solid transparent')};
-  transition: all 0.2s;
+  transition: all 0.15s ease;
   user-select: none;
   white-space: nowrap;
+  position: relative;
+  margin-bottom: -1px;
+  ${({ $active }) => $active && 'box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);'}
 
   &:hover {
-    background: ${({ theme }) => theme['sidebar-collection-item-active-background']};
+    background: ${({ $active, theme }) =>
+      $active ? theme['primary-theme'] : theme['sidebar-collection-item-active-background']};
+    ${({ $active }) => !$active && 'transform: translateY(-1px);'}
   }
 
   .tab-method {
     font-size: 10px;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 3px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 4px;
     color: white;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   }
 
   .tab-close {
     margin-left: 4px;
-    padding: 2px 4px;
-    border-radius: 3px;
-    opacity: 0.6;
+    padding: 3px 5px;
+    border-radius: 4px;
+    opacity: 0.5;
+    transition: all 0.15s ease;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
       opacity: 1;
@@ -122,112 +175,266 @@ const RequestPanel = styled.div<{ $height: number }>`
 `;
 
 const PanelHeader = styled.div`
-  padding: 12px 16px;
+  padding: 10px 16px;
   background: ${({ theme }) => theme['sidebar-background']};
   border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: ${({ theme }) => theme['secondary-text']};
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .panel-icon {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+  }
+
+  .panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    background: ${({ theme }) => theme['primary-theme']};
+    color: ${({ theme }) => theme['primary-text']};
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .panel-action-btn {
+    padding: 4px 8px;
+    border: none;
+    background: transparent;
+    color: ${({ theme }) => theme['secondary-text']};
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 11px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: ${({ theme }) => theme['primary-theme']};
+      color: ${({ theme }) => theme['primary-text']};
+    }
+  }
 `;
 
 const URLBar = styled.div`
-  padding: 12px 16px;
+  padding: 16px;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   background: ${({ theme }) => theme['primary-theme']};
   border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
 
-  select {
-    padding: 6px 12px;
+  .url-input-group {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
     border: 1px solid ${({ theme }) => theme['layout-border']};
-    border-radius: 4px;
-    background: ${({ theme }) => theme['sidebar-background']};
-    color: ${({ theme }) => theme['primary-text']};
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    outline: none;
+    border-radius: 6px;
+    background: ${({ theme }) => theme['primary-theme']};
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
-    &:focus {
+    &:focus-within {
       border-color: ${({ theme }) => theme.brand};
+      box-shadow: 0 0 0 3px ${({ theme }) => theme.brand}33;
+    }
+
+    &:hover {
+      border-color: ${({ theme }) => theme.brand}66;
+    }
+
+    .url-icon {
+      font-size: 14px;
+      opacity: 0.5;
+    }
+
+    input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: ${({ theme }) => theme['primary-text']};
+      font-size: 13px;
+      outline: none;
+
+      &::placeholder {
+        color: ${({ theme }) => theme['secondary-text']};
+        opacity: 0.6;
+      }
     }
   }
 
-  input {
-    flex: 1;
-    padding: 6px 12px;
+  select {
+    padding: 8px 14px;
     border: 1px solid ${({ theme }) => theme['layout-border']};
-    border-radius: 4px;
-    background: ${({ theme }) => theme['primary-theme']};
+    border-radius: 6px;
+    background: ${({ theme }) => theme['sidebar-background']};
     color: ${({ theme }) => theme['primary-text']};
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
     outline: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      border-color: ${({ theme }) => theme.brand};
+    }
 
     &:focus {
       border-color: ${({ theme }) => theme.brand};
+      box-shadow: 0 0 0 3px ${({ theme }) => theme.brand}33;
     }
   }
 
   button {
-    padding: 6px 20px;
+    padding: 8px 24px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     background: ${({ theme }) => theme.brand};
     color: white;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
     &:hover {
-      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
   }
 `;
 
 const RequestTabs = styled.div`
   display: flex;
-  gap: 16px;
-  padding: 8px 16px;
+  gap: 20px;
+  padding: 0 16px;
   background: ${({ theme }) => theme['sidebar-background']};
   border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
-  font-size: 12px;
+  font-size: 13px;
 `;
 
 const RequestTab = styled.div<{ $active?: boolean }>`
-  padding: 6px 0;
+  padding: 12px 0;
   cursor: pointer;
   color: ${({ $active, theme }) => ($active ? theme['primary-text'] : theme['secondary-text'])};
   border-bottom: ${({ $active, theme }) => ($active ? `2px solid ${theme.brand}` : '2px solid transparent')};
-  font-weight: ${({ $active }) => ($active ? 600 : 400)};
-  transition: all 0.2s;
+  font-weight: ${({ $active }) => ($active ? 600 : 500)};
+  transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     color: ${({ theme }) => theme['primary-text']};
   }
+
+  ${({ $active, theme }) =>
+    $active &&
+    `
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: ${theme.brand};
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: scaleX(0);
+      }
+      to {
+        transform: scaleX(1);
+      }
+    }
+  `}
 `;
 
 const RequestBody = styled.div`
   flex: 1;
-  padding: 16px;
+  padding: 20px;
   overflow: auto;
   background: ${({ theme }) => theme['primary-theme']};
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme['layout-border']};
+    border-radius: 4px;
+
+    &:hover {
+      background: ${({ theme }) => theme['secondary-text']};
+    }
+  }
 `;
 
 const VerticalDragHandle = styled.div`
-  height: 4px;
+  height: 5px;
   cursor: row-resize;
-  background: transparent;
-  transition: background 0.2s;
+  background: ${({ theme }) => theme['layout-border']};
+  transition: all 0.2s ease;
   position: relative;
   z-index: 10;
 
-  &:hover,
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 3px;
+    background: ${({ theme }) => theme['secondary-text']};
+    border-radius: 2px;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover {
+    background: ${({ theme }) => theme.brand}33;
+
+    &::before {
+      opacity: 0.6;
+      background: ${({ theme }) => theme.brand};
+    }
+  }
+
   &:active {
-    background: ${({ theme }) => theme.brand};
+    background: ${({ theme }) => theme.brand}66;
   }
 `;
 
@@ -240,24 +447,46 @@ const ResponsePanel = styled.div`
 
 const ResponseTabs = styled.div`
   display: flex;
-  gap: 16px;
-  padding: 8px 16px;
+  gap: 20px;
+  padding: 0 16px;
   background: ${({ theme }) => theme['sidebar-background']};
   border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
-  font-size: 12px;
+  font-size: 13px;
 `;
 
 const ResponseBody = styled.div`
   flex: 1;
-  padding: 16px;
+  padding: 20px;
   overflow: auto;
   background: ${({ theme }) => theme['primary-theme']};
 
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme['layout-border']};
+    border-radius: 4px;
+
+    &:hover {
+      background: ${({ theme }) => theme['secondary-text']};
+    }
+  }
+
   pre {
     margin: 0;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
     line-height: 1.6;
+    padding: 16px;
+    background: ${({ theme }) => theme['sidebar-background']};
+    border-radius: 6px;
+    border: 1px solid ${({ theme }) => theme['layout-border']};
   }
 `;
 
@@ -270,23 +499,99 @@ const WelcomeScreen = styled.div`
   color: ${({ theme }) => theme['secondary-text']};
   text-align: center;
   padding: 40px;
+  animation: fadeIn 0.4s ease;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
   .icon {
-    font-size: 64px;
-    margin-bottom: 24px;
-    opacity: 0.3;
+    font-size: 72px;
+    margin-bottom: 28px;
+    opacity: 0.4;
+    filter: grayscale(0.3);
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
 
   h1 {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 16px;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
     color: ${({ theme }) => theme['primary-text']};
+    background: linear-gradient(135deg, ${({ theme }) => theme['primary-text']} 0%, ${({ theme }) => theme.brand} 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   p {
-    font-size: 14px;
-    margin-bottom: 8px;
+    font-size: 15px;
+    margin-bottom: 6px;
+    line-height: 1.6;
+    opacity: 0.9;
+
+    &:last-of-type {
+      font-size: 13px;
+      opacity: 0.6;
+      margin-top: 8px;
+    }
+  }
+
+  .quick-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .action-card {
+    padding: 20px 24px;
+    background: ${({ theme }) => theme['sidebar-background']};
+    border: 1px solid ${({ theme }) => theme['layout-border']};
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 160px;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: ${({ theme }) => theme.brand}66;
+    }
+
+    .action-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .action-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: ${({ theme }) => theme['primary-text']};
+      margin-bottom: 4px;
+    }
+
+    .action-desc {
+      font-size: 12px;
+      color: ${({ theme }) => theme['secondary-text']};
+      opacity: 0.8;
+    }
   }
 `;
 
@@ -295,9 +600,63 @@ const EmptyState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 60px 40px;
   color: ${({ theme }) => theme['secondary-text']};
   text-align: center;
+  opacity: 0.7;
+  font-size: 13px;
+  animation: fadeIn 0.3s ease;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 0.7;
+      transform: translateY(0);
+    }
+  }
+
+  .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+`;
+
+const KeyboardHint = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: ${({ theme }) => theme['sidebar-background']};
+  border: 1px solid ${({ theme }) => theme['layout-border']};
+  border-radius: 6px;
+  font-size: 11px;
+  color: ${({ theme }) => theme['secondary-text']};
+  font-family: 'Monaco', 'Menlo', monospace;
+
+  kbd {
+    padding: 2px 6px;
+    background: ${({ theme }) => theme['primary-theme']};
+    border: 1px solid ${({ theme }) => theme['layout-border']};
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
 `;
 
 interface OpenTab {
@@ -391,7 +750,7 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
 
   const handleRequestClick = (requestId: string) => {
     dispatch(setSelectedRequest(requestId));
-    
+
     // Encontrar o request no mock data
     let foundRequest: { id: string; name: string; method: string; url?: string } | null = null;
     for (const collection of mockCollections) {
@@ -435,7 +794,7 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
     e.stopPropagation();
     const newTabs = openTabs.filter((tab) => tab.id !== tabId);
     setOpenTabs(newTabs);
-    
+
     if (activeTabId === tabId) {
       setActiveTabId(newTabs.length > 0 ? newTabs[newTabs.length - 1].id : null);
     }
@@ -489,7 +848,15 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
 
             <ContentArea className="content-area">
               <RequestPanel $height={requestPanelHeight}>
-                <PanelHeader>Request</PanelHeader>
+                <PanelHeader>
+                  <div className="panel-title">
+                    <span className="panel-icon">📤</span>
+                    <span>Request</span>
+                  </div>
+                  <div className="panel-actions">
+                    <span className="panel-badge">{currentMethod}</span>
+                  </div>
+                </PanelHeader>
 
                 <URLBar>
                   <select value={currentMethod} onChange={(e) => setCurrentMethod(e.target.value)}>
@@ -499,7 +866,17 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
                     <option value="DELETE">DELETE</option>
                     <option value="PATCH">PATCH</option>
                   </select>
-                  <input type="text" value={currentUrl} onChange={(e) => setCurrentUrl(e.target.value)} placeholder="Enter request URL" />
+
+                  <div className="url-input-group">
+                    <span className="url-icon">🔗</span>
+                    <input
+                      type="text"
+                      value={currentUrl}
+                      onChange={(e) => setCurrentUrl(e.target.value)}
+                      placeholder="Enter request URL"
+                    />
+                  </div>
+
                   <button>Send</button>
                 </URLBar>
 
@@ -519,17 +896,45 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
                 </RequestTabs>
 
                 <RequestBody>
-                  {activeRequestTab === 'params' && <EmptyState>No query parameters</EmptyState>}
-                  {activeRequestTab === 'headers' && <EmptyState>No headers</EmptyState>}
-                  {activeRequestTab === 'body' && <EmptyState>No body</EmptyState>}
-                  {activeRequestTab === 'auth' && <EmptyState>No authorization</EmptyState>}
+                  {activeRequestTab === 'params' && (
+                    <EmptyState>
+                      <div className="icon">🔍</div>
+                      <div>No query parameters</div>
+                    </EmptyState>
+                  )}
+                  {activeRequestTab === 'headers' && (
+                    <EmptyState>
+                      <div className="icon">📋</div>
+                      <div>No headers</div>
+                    </EmptyState>
+                  )}
+                  {activeRequestTab === 'body' && (
+                    <EmptyState>
+                      <div className="icon">📄</div>
+                      <div>No body</div>
+                    </EmptyState>
+                  )}
+                  {activeRequestTab === 'auth' && (
+                    <EmptyState>
+                      <div className="icon">🔐</div>
+                      <div>No authorization</div>
+                    </EmptyState>
+                  )}
                 </RequestBody>
               </RequestPanel>
 
               <VerticalDragHandle onMouseDown={handleVerticalDragStart} />
 
               <ResponsePanel>
-                <PanelHeader>Response</PanelHeader>
+                <PanelHeader>
+                  <div className="panel-title">
+                    <span className="panel-icon">📥</span>
+                    <span>Response</span>
+                  </div>
+                  <div className="panel-actions">
+                    <span className="panel-badge">Ready</span>
+                  </div>
+                </PanelHeader>
 
                 <ResponseTabs>
                   <RequestTab $active={activeResponseTab === 'body'} onClick={() => setActiveResponseTab('body')}>
@@ -546,12 +951,24 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
                 <ResponseBody>
                   {activeResponseTab === 'body' && (
                     <EmptyState>
-                      <div style={{ fontSize: '48px', marginBottom: '16px' }}>📡</div>
-                      <div>Hit Send to execute the request</div>
+                      <div className="icon">📡</div>
+                      <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '8px', color: 'inherit' }}>
+                        Hit Send to execute the request
+                      </div>
                     </EmptyState>
                   )}
-                  {activeResponseTab === 'headers' && <EmptyState>No response yet</EmptyState>}
-                  {activeResponseTab === 'console' && <EmptyState>No console logs</EmptyState>}
+                  {activeResponseTab === 'headers' && (
+                    <EmptyState>
+                      <div className="icon">📋</div>
+                      <div>No response yet</div>
+                    </EmptyState>
+                  )}
+                  {activeResponseTab === 'console' && (
+                    <EmptyState>
+                      <div className="icon">💬</div>
+                      <div>No console logs</div>
+                    </EmptyState>
+                  )}
                 </ResponseBody>
               </ResponsePanel>
             </ContentArea>
@@ -561,7 +978,41 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
             <div className="icon">🚀</div>
             <h1>Flow Test Engine</h1>
             <p>Select a request from the collection to get started</p>
-            <p style={{ fontSize: '12px', opacity: 0.7 }}>Or use the + button to create a new collection</p>
+            <p>Build, test, and debug your API flows with ease</p>
+
+            <div className="quick-actions">
+              <div className="action-card" onClick={handleCreateCollection}>
+                <div className="action-icon">📁</div>
+                <div className="action-title">New Collection</div>
+                <div className="action-desc">Create a new API collection</div>
+              </div>
+
+              <div className="action-card">
+                <div className="action-icon">⚡</div>
+                <div className="action-title">Quick Request</div>
+                <div className="action-desc">Send a one-off request</div>
+              </div>
+
+              <div className="action-card">
+                <div className="action-icon">📖</div>
+                <div className="action-title">Documentation</div>
+                <div className="action-desc">Learn more about Flow Test</div>
+              </div>
+            </div>
+
+            <div
+              style={{ marginTop: '40px', display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}
+            >
+              <KeyboardHint>
+                <kbd>⌘</kbd> + <kbd>N</kbd> New Request
+              </KeyboardHint>
+              <KeyboardHint>
+                <kbd>⌘</kbd> + <kbd>T</kbd> New Tab
+              </KeyboardHint>
+              <KeyboardHint>
+                <kbd>⌘</kbd> + <kbd>Enter</kbd> Send
+              </KeyboardHint>
+            </div>
           </WelcomeScreen>
         )}
       </MainSection>
