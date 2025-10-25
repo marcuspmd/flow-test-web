@@ -33,6 +33,7 @@ export interface FlowTestAPI {
   selectFile: (filters?: { name: string; extensions: string[] }[]) => Promise<string | null>;
   readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
   writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
+  saveTestSuite: (content: string, suggestedName: string) => Promise<{ success?: boolean; canceled?: boolean; filePath?: string; error?: string }>;
 }
 
 declare global {

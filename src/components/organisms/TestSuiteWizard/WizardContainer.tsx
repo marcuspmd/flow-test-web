@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { updateTestSuiteData } from '../../../store/slices/testSuiteEditorSlice';
+import { updateWizardData } from '../../../store/slices/testSuiteEditorSlice';
 import { TestSuiteWizardData } from './types';
 
 // Step components (to be created)
@@ -191,7 +191,7 @@ export const WizardContainer: React.FC = () => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [validationResult, setValidationResult] = useState<ValidationResult>({ isValid: true });
   const dispatch = useAppDispatch();
-  const { currentData } = useAppSelector((state) => state.testSuiteEditor);
+  const { wizardData } = useAppSelector((state) => state.testSuiteEditor);
 
   const currentStep = WIZARD_STEPS[currentStepIndex];
   const StepComponent = currentStep.component;
@@ -217,7 +217,7 @@ export const WizardContainer: React.FC = () => {
   };
 
   const handleUpdate = (updates: Partial<TestSuiteWizardData>) => {
-    dispatch(updateTestSuiteData(updates));
+    dispatch(updateWizardData(updates));
   };
 
   const handleValidation = (result: ValidationResult) => {
@@ -254,7 +254,7 @@ export const WizardContainer: React.FC = () => {
 
       <StepContent>
         <StepComponent
-          data={currentData}
+          data={wizardData}
           onUpdate={handleUpdate}
           onValidation={handleValidation}
         />
