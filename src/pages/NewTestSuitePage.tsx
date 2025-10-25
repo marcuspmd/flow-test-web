@@ -10,8 +10,11 @@ import {
   togglePreviewPanel,
   resetEditor,
   EditorMode,
+  setTestSuiteData,
 } from '../store/slices/testSuiteEditorSlice';
 import * as yaml from 'js-yaml';
+import { YAMLEditor } from '../components/organisms/YAMLEditor';
+import { WizardContainer } from '../components/organisms/TestSuiteWizard';
 
 const PageContainer = styled.div`
   display: flex;
@@ -274,6 +277,15 @@ const IconButton = styled.button`
   }
 `;
 
+const YAMLEditorContainer = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+  background: ${({ theme }) => theme['primary-theme']};
+`;
+
 export default function NewTestSuitePage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -361,31 +373,32 @@ export default function NewTestSuitePage() {
 
   const editorWidth = 100 - previewPanelWidth;
 
+  const handleYAMLChange = (newYaml: string) => {
+    try {
+      // Parse YAML to update currentData
+      const parsed = yaml.load(newYaml) as any;
+      dispatch(setTestSuiteData(parsed || {}));
+      dispatch(setGeneratedYAML(newYaml));
+    } catch (error) {
+      // Invalid YAML, just update the YAML string
+      dispatch(setGeneratedYAML(newYaml));
+    }
+  };
+
   const renderModeContent = () => {
     switch (mode) {
       case 'wizard':
-        return (
-          <PlaceholderContent>
-            <div className="icon">🧙</div>
-            <h2>Wizard Mode</h2>
-            <p>
-              Step-by-step guided creation of test suites.
-              <br />
-              This will be implemented in TASK_004.
-            </p>
-          </PlaceholderContent>
-        );
+        return <WizardContainer />;
       case 'yaml':
         return (
-          <PlaceholderContent>
-            <div className="icon">📝</div>
-            <h2>YAML Editor Mode</h2>
-            <p>
-              Direct YAML editing with syntax highlighting.
-              <br />
-              This will be implemented in TASK_005.
-            </p>
-          </PlaceholderContent>
+          <YAMLEditorContainer>
+            <YAMLEditor
+              value={generatedYAML}
+              onChange={handleYAMLChange}
+              height="100%"
+              readOnly={false}
+            />
+          </YAMLEditorContainer>
         );
       case 'form':
         return (

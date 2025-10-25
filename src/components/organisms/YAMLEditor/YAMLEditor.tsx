@@ -55,6 +55,14 @@ interface YAMLEditorProps {
 /**
  * YAML Editor Component
  * Monaco-based editor with YAML syntax highlighting, validation, and autocomplete
+ * Features:
+ * - Schema-based autocomplete and validation
+ * - Syntax highlighting
+ * - Hover tooltips with documentation
+ * - Code snippets
+ * - Format document (Ctrl+Shift+F / Cmd+Shift+F)
+ * - Minimap (optional)
+ * - Variable detection and highlighting
  */
 export const YAMLEditor = ({ value, onChange, height = '600px', readOnly = false, onValidation }: YAMLEditorProps) => {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -358,6 +366,89 @@ export const YAMLEditor = ({ value, onChange, height = '600px', readOnly = false
             })
           );
 
+          // 4. Variable Definition Provider - Go to definition for {{variable}}
+          disposables.push(
+            monacoRef.current.languages.registerDefinitionProvider('yaml', {
+              provideDefinition: (model, position) => {
+                const word = model.getWordAtPosition(position);
+                if (!word) return null;
+
+                const lineContent = model.getLineContent(position.lineNumber);
+                
+                // Check if we're inside a {{variable}} pattern
+                const varPattern = /\{\{([^}]+)\}\}/g;
+                let match;
+                let isInVariable = false;
+                let variableName = '';
+
+                while ((match = varPattern.exec(lineContent)) !== null) {
+                  const start = match.index;
+                  const end = match.index + match[0].length;
+                  const col = position.column - 1;
+                  
+                  if (col >= start && col <= end) {
+                    isInVariable = true;
+                    variableName = match[1].trim();
+                    break;
+                  }
+                }
+
+                if (!isInVariable || !variableName) return null;
+
+                // Search for variable definition
+                const lines = model.getLinesContent();
+                for (let i = 0; i < lines.length; i++) {
+                  const line = lines[i];
+                  
+                  // Look for variable definitions in 'variables:' section or 'capture:' sections
+                  const variableDefPattern = new RegExp(`^\\s*${variableName}:\\s*`, 'i');
+                  const capturePattern = new RegExp(`^\\s*-\\s*${variableName}:\\s*`, 'i');
+                  
+                  if (variableDefPattern.test(line) || capturePattern.test(line)) {
+                    return {
+                      uri: model.uri,
+                      range: {
+                        startLineNumber: i + 1,
+                        startColumn: 1,
+                        endLineNumber: i + 1,
+                        endColumn: line.length + 1,
+                      },
+                    };
+                  }
+                }
+
+                return null;
+              },
+            })
+          );
+
+          // 5. Register Format Document Provider
+          disposables.push(
+            monacoRef.current.languages.registerDocumentFormattingEditProvider('yaml', {
+              provideDocumentFormattingEdits: (model) => {
+                try {
+                  const content = model.getValue();
+                  const parsed = yaml.load(content);
+                  const formatted = yaml.dump(parsed, { 
+                    indent: 2,
+                    lineWidth: 120,
+                    noRefs: true,
+                  });
+                  
+                  return [
+                    {
+                      range: model.getFullModelRange(),
+                      text: formatted,
+                    },
+                  ];
+                } catch (error) {
+                  console.error('Failed to format YAML:', error);
+                  return [];
+                }
+              },
+            })
+          );
+
           setSchemaLoaded(true);
           console.log('✅ Flow Test Engine schema loaded - autocomplete, hover, and snippets enabled');
 
@@ -426,7 +517,7 @@ export const YAMLEditor = ({ value, onChange, height = '600px', readOnly = false
         onMount={handleEditorDidMount}
         options={{
           readOnly,
-          minimap: { enabled: false },
+          minimap: { enabled: true }, // Enable minimap as per TASK_005
           scrollBeyondLastLine: false,
           fontSize: 13,
           lineNumbers: 'on',

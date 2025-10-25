@@ -44,6 +44,7 @@
     "@rsbuild/plugin-styled-components": "^1.0.3",
     "@rsbuild/plugin-type-check": "^1.1.0",
     "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.9.1",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
     "@types/styled-components": "^5.1.34",
