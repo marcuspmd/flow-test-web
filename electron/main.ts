@@ -272,4 +272,33 @@ ipcMain.handle('write-file', async (_event, filePath: string, content: string) =
   }
 });
 
+// Save test suite with dialog
+ipcMain.handle('save-test-suite', async (_event, { content, suggestedName }: { content: string; suggestedName: string }) => {
+  try {
+    // Sanitize filename to prevent path traversal
+    const sanitizedName = suggestedName
+      .replace(/[/\\:*?"<>|]/g, '-') // Remove invalid characters
+      .replace(/\.\./g, '-') // Remove parent directory references
+      .substring(0, 255); // Limit filename length
+
+    const result = await dialog.showSaveDialog(mainWindow!, {
+      title: 'Save Test Suite',
+      defaultPath: `${sanitizedName || 'test-suite'}.yaml`,
+      filters: [
+        { name: 'YAML Files', extensions: ['yaml', 'yml'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { canceled: true };
+    }
+
+    await fs.writeFile(result.filePath, content, 'utf-8');
+    return { success: true, filePath: result.filePath };
+  } catch (error: unknown) {
+    return { success: false, error: (error as Error).message };
+  }
+});
+
 console.log('✅ Electron Main Process Initialized');
