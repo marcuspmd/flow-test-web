@@ -20,6 +20,8 @@ import { YAMLEditor } from '../components/organisms/YAMLEditor';
 import { WizardContainer } from '../components/organisms/TestSuiteWizard';
 import { VisualFormBuilder } from '../components/organisms/VisualFormBuilder';
 import { useAutoSave, restoreAutoSave, clearAutoSave, hasAutoSave } from '../hooks/useAutoSave';
+import { saveTestSuiteToFile, downloadTestSuiteYAML, validateTestSuiteYAML } from '../services/testSuiteFile.service';
+import { showSuccess, showError, showInfo } from '../utils/toast';
 
 const PageContainer = styled.div`
   display: flex;
@@ -357,6 +359,7 @@ export default function NewTestSuitePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [autoSaveData, setAutoSaveData] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Check for auto-saved data on mount
   useEffect(() => {
@@ -413,24 +416,46 @@ export default function NewTestSuitePage() {
     navigate(-1);
   };
 
-  const handleSave = () => {
-    // TODO: Implement save logic (TASK_008)
-    console.log('Saving test suite:', currentData);
-    alert('Save functionality will be implemented in TASK_008');
-    dispatch(markClean());
+  const handleSave = async () => {
+    // Validate YAML before saving
+    const validation = validateTestSuiteYAML(generatedYAML);
+    if (!validation.valid) {
+      showError(`Invalid test suite: ${validation.errors.join(', ')}`);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const result = await saveTestSuiteToFile(generatedYAML, testSuiteName || 'test-suite');
+      
+      if (result.canceled) {
+        showInfo('Save cancelled');
+      } else if (result.success) {
+        showSuccess(`Test suite saved successfully to ${result.filePath}`);
+        dispatch(markClean());
+        clearAutoSave();
+      } else {
+        showError(`Failed to save: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Failed to save test suite');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleExport = () => {
+    // Validate before export
+    const validation = validateTestSuiteYAML(generatedYAML);
+    if (!validation.valid) {
+      showError(`Invalid test suite: ${validation.errors.join(', ')}`);
+      return;
+    }
+
     // Export YAML
-    const blob = new Blob([generatedYAML], { type: 'text/yaml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentData.name || 'test-suite'}.yaml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = testSuiteName || 'test-suite';
+    downloadTestSuiteYAML(generatedYAML, filename);
+    showSuccess(`Test suite exported as ${filename}.yaml`);
   };
 
   const handleMouseMove = useCallback(
@@ -554,8 +579,8 @@ export default function NewTestSuitePage() {
           <Button $variant="secondary" onClick={handleExport}>
             Export YAML
           </Button>
-          <Button $variant="primary" onClick={handleSave}>
-            Save Test Suite
+          <Button $variant="primary" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Test Suite'}
           </Button>
         </HeaderActions>
       </PageHeader>

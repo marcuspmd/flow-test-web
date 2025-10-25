@@ -28,6 +28,7 @@ export interface FlowTestAPI {
   selectFile: (filters?: { name: string; extensions: string[] }[]) => Promise<string | null>;
   readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
   writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
+  saveTestSuite: (content: string, suggestedName: string) => Promise<{ success?: boolean; canceled?: boolean; filePath?: string; error?: string }>;
 }
 
 export interface ExecuteOptions {
@@ -102,6 +103,10 @@ const flowTestAPI: FlowTestAPI = {
 
   writeFile: (filePath: string, content: string) => {
     return ipcRenderer.invoke('write-file', filePath, content);
+  },
+
+  saveTestSuite: (content: string, suggestedName: string) => {
+    return ipcRenderer.invoke('save-test-suite', { content, suggestedName });
   },
 };
 

@@ -243,4 +243,25 @@ electron_1.ipcMain.handle('write-file', async (_event, filePath, content) => {
         return { success: false, error: error.message };
     }
 });
+// Save test suite with dialog
+electron_1.ipcMain.handle('save-test-suite', async (_event, { content, suggestedName }) => {
+    try {
+        const result = await electron_1.dialog.showSaveDialog(mainWindow, {
+            title: 'Save Test Suite',
+            defaultPath: `${suggestedName || 'test-suite'}.yaml`,
+            filters: [
+                { name: 'YAML Files', extensions: ['yaml', 'yml'] },
+                { name: 'All Files', extensions: ['*'] },
+            ],
+        });
+        if (result.canceled || !result.filePath) {
+            return { canceled: true };
+        }
+        await fs_1.promises.writeFile(result.filePath, content, 'utf-8');
+        return { success: true, filePath: result.filePath };
+    }
+    catch (error) {
+        return { success: false, error: error.message };
+    }
+});
 console.log('✅ Electron Main Process Initialized');

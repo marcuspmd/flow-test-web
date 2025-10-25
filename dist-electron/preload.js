@@ -56,6 +56,9 @@ const flowTestAPI = {
     writeFile: (filePath, content) => {
         return electron_1.ipcRenderer.invoke('write-file', filePath, content);
     },
+    saveTestSuite: (content, suggestedName) => {
+        return electron_1.ipcRenderer.invoke('save-test-suite', { content, suggestedName });
+    },
 };
 // Expor API via contextBridge
 electron_1.contextBridge.exposeInMainWorld('flowTestAPI', flowTestAPI);
