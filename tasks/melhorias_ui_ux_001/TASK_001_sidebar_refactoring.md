@@ -8,7 +8,7 @@ Transformar o sidebar atual em um mini-sidebar persistente (sempre visível) ins
 |-------|-------|
 | **ID** | TASK_001 |
 | **Branch** | feature/TASK_001-mini-sidebar-refactoring |
-| **Status** | 🔴 To Do |
+| **Status** | ✅ Done |
 | **Prioridade** | P0 (Crítica) |
 | **Estimativa** | 4 horas |
 | **Sprint** | Sprint 2 |
@@ -17,6 +17,7 @@ Transformar o sidebar atual em um mini-sidebar persistente (sempre visível) ins
 | **Tags** | `ui`, `sidebar`, `refactoring`, `design` |
 | **Criada em** | 2025-10-25 |
 | **Atualizada em** | 2025-10-25 |
+| **Concluída em** | 2025-10-25 |
 
 ## 🔗 Relacionamentos
 - **Bloqueia:** TASK_002
@@ -192,15 +193,19 @@ Transformar o sidebar atual em um mini-sidebar persistente (sempre visível) ins
 ```markdown
 - **[2025-10-25 10:30]** - Status: To Do → Aguardando início
   - Task criada e planejada
+- **[2025-10-25 10:34]** - Status: Done ✅
+  - Implementação completa via merge #1
+  - Mini-sidebar, content area e views dinâmicas funcionando
+  - Type-check e build passando
 ```
 
 ## 🎯 Definition of Done
-- [ ] Código implementado e funcionando
-- [ ] Mini-sidebar com ícones funcionais
-- [ ] Content area dinâmica com views alternáveis
-- [ ] Header do sidebar removido
-- [ ] Resize funcional
-- [ ] Testes de UI passando
-- [ ] Type-check sem erros
-- [ ] Documentação atualizada
-- [ ] Dark/Light theme consistente
+- [x] Código implementado e funcionando
+- [x] Mini-sidebar com ícones funcionais
+- [x] Content area dinâmica com views alternáveis
+- [x] Header do sidebar removido
+- [x] Resize funcional
+- [x] Testes de UI passando
+- [x] Type-check sem erros
+- [x] Documentação atualizada
+- [x] Dark/Light theme consistente

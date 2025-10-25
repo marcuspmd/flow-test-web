@@ -34,11 +34,29 @@ URLs / output
 - Estilo: Tailwind + Styled Components; global styles em `src/styles/globals.css`.
 - Tipos: TypeScript; rode `npm run type-check` após mudanças de tipos.
 
+## Sistema de Sidebar (TASK_001 - Mini-Sidebar VS Code-style)
+O sidebar foi refatorado para um sistema mini-sidebar persistente inspirado no VS Code:
+- **MiniSidebar** (`src/components/organisms/Sidebar/MiniSidebar.tsx`): Barra vertical de 60px com ícones para navegação
+- **SidebarContentArea** (`src/components/organisms/Sidebar/SidebarContentArea.tsx`): Área de conteúdo dinâmica (280-600px) ao lado dos ícones
+- **Views dinâmicas**: CollectionsView, EnvironmentsView, HistoryView, SettingsView
+- **Estado gerenciado**: Redux slice `sidebarSlice` controla `activeView`, `sidebarWidth`, etc.
+- **Integração**: `MainWorkspace.tsx` renderiza `<MiniSidebar>` + `<SidebarContentArea>` lado a lado
+
+**Padrões importantes:**
+- Views são lazy-loaded e preservam estado ao alternar
+- Ícones usam react-icons (VscFiles, VscSettings, etc.)
+- Tooltips aparecem no hover para ícones não-ativos
+- Tema dark/light aplicado consistentemente
+- Drag handle para resize da content area
+
 ## Onde procurar exemplos
 - Expor/consumir API IPC: `electron/preload.ts` (exposição) ↔ `src/services/flowTestElectron.service.ts` (consumo).
 - Implementação do processo principal e CSP: `electron/main.ts`.
 - Parsing de logs/steps: `src/services/flowTestParser.service.ts`.
 - Pages e UI que iniciam execuções: `src/pages/TestRunnerPage.tsx` e `src/pages/TestRunnerWithParsingPage.tsx` (procure por chamadas a `executeFlowTest`, `stopExecution`).
+- **Sistema de Sidebar**: `src/components/organisms/Sidebar/` (MiniSidebar, SidebarContentArea, views individuais).
+- **Estado do Sidebar**: `src/store/slices/sidebarSlice.ts` e tipos em `src/types/sidebar.types.ts`.
+- **Integração no Layout**: `src/pages/MainWorkspace.tsx` (como MiniSidebar + SidebarContentArea são renderizados).
 
 ## Dicas práticas para Pull Requests
 - Alterações em IPC: documente o novo contrato em `electron/preload.ts` e atualize todos os consumidores em `src/services`.

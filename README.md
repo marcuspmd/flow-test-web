@@ -16,14 +16,47 @@ Interface web moderna para o Flow Test Engine, baseada no design do Bruno API Cl
 ```
 src/
 ├── components/        # Componentes reutilizáveis
+│   ├── atoms/         # Componentes básicos (Button, Input, etc.)
+│   ├── molecules/     # Componentes compostos
+│   └── organisms/     # Componentes complexos
+│       └── Sidebar/   # Sistema de sidebar VS Code-style
+│           ├── MiniSidebar.tsx          # Barra lateral de ícones (60px)
+│           ├── SidebarContentArea.tsx   # Área de conteúdo dinâmica
+│           ├── CollectionsView.tsx      # View de coleções
+│           ├── EnvironmentsView.tsx     # View de ambientes
+│           ├── HistoryView.tsx          # View de histórico
+│           └── SettingsView.tsx         # View de configurações
 ├── pages/            # Páginas da aplicação
 ├── providers/        # Context providers (Theme, etc)
 ├── hooks/            # Custom hooks
+├── store/            # Redux store e slices
+│   └── slices/       # Redux slices (sidebarSlice, etc.)
 ├── utils/            # Funções utilitárias
 ├── styles/           # Estilos globais
 ├── themes/           # Temas (light/dark)
 └── types/            # Tipos TypeScript
 ```
+
+## 🗂️ Arquitetura do Sidebar
+
+O projeto implementa um sistema de sidebar inspirado no VS Code:
+
+### Mini-Sidebar (60px)
+- Barra lateral fixa com ícones de navegação
+- Suporte a tooltips no hover
+- Indicador visual da view ativa
+- Ícones: Collections (VscFiles), Environments (MdOutlineSettingsApplications), History (VscHistory), Settings (VscSettings)
+
+### Área de Conteúdo Dinâmica
+- Largura ajustável (280px - 600px)
+- Drag handle para resize
+- Views lazy-loaded e com estado preservado
+- Transições suaves entre views
+
+### Gerenciamento de Estado
+- Redux slice `sidebarSlice` para estado global
+- Controle de `activeView`, `sidebarWidth`, collections, etc.
+- Integração com tema dark/light
 
 ## 🎨 Design System
 

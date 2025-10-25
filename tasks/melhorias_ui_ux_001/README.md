@@ -32,7 +32,7 @@ melhorias_ui_ux_001/
 
 | ID | Título | Status | Prioridade | Estimativa | Bloqueada Por |
 |----|--------|--------|------------|------------|---------------|
-| [TASK_001](./TASK_001_sidebar_refactoring.md) | Mini-Sidebar Persistente | 🔴 To Do | P0 | 4h | - |
+| [TASK_001](./TASK_001_sidebar_refactoring.md) | Mini-Sidebar Persistente | ✅ Done | P0 | 4h | - |
 | [TASK_002](./TASK_002_sidebar_navigation_system.md) | Sistema de Navegação Sidebar | 🔴 To Do | P0 | 3h | TASK_001 |
 | [TASK_003](./TASK_003_new_test_suite_page.md) | Página New Test Suite | 🔴 To Do | P0 | 3h | TASK_002 |
 | [TASK_004](./TASK_004_wizard_multi_step.md) | Wizard Multi-Step | 🔴 To Do | P1 | 6h | TASK_003 |
@@ -127,9 +127,9 @@ TASK_004 + TASK_005 + TASK_006 ──> TASK_007 (3h) ──> TASK_008 (3h)
 
 ## 🚀 Próximos Passos
 
-**Status Atual:** ✅ Planejamento Completo
+**Status Atual:** ✅ TASK_001 Concluído
 
-**Próxima Task:** TASK_001 - Refatorar Sidebar para Mini-Sidebar
+**Próxima Task:** TASK_002 - Sistema de Navegação do Sidebar com Views Dinâmicas
 
 ---
 
@@ -137,4 +137,4 @@ TASK_004 + TASK_005 + TASK_006 ──> TASK_007 (3h) ──> TASK_008 (3h)
 **Data de Criação:** 2025-10-25
 **Última Atualização:** 2025-10-25
 **Responsável:** @marcuspmd
-**Status Geral:** 🔴 To Do - Aguardando Início
+**Status Geral:** � Em Andamento - Fase 1/4 Concluída
