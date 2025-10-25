@@ -8,7 +8,7 @@ Criar página dedicada `/new-test` com área ampla e organizada para criação d
 |-------|-------|
 | **ID** | TASK_003 |
 | **Branch** | feature/TASK_003-new-test-suite-page |
-| **Status** | 🔴 To Do |
+| **Status** | ✅ Done |
 | **Prioridade** | P0 (Crítica) |
 | **Estimativa** | 3 horas |
 | **Sprint** | Sprint 2 |
@@ -17,6 +17,7 @@ Criar página dedicada `/new-test` com área ampla e organizada para criação d
 | **Tags** | `page`, `routing`, `ui`, `test-creation` |
 | **Criada em** | 2025-10-25 |
 | **Atualizada em** | 2025-10-25 |
+| **Concluída em** | 2025-10-25 |
 
 ## 🔗 Relacionamentos
 - **Bloqueia:** TASK_004, TASK_005, TASK_006, TASK_007
@@ -26,14 +27,14 @@ Criar página dedicada `/new-test` com área ampla e organizada para criação d
 - **Subtasks:** TASK_004, TASK_005, TASK_006, TASK_007
 
 ## 📊 Critérios de Aceite
-- [ ] Rota `/new-test` configurada no React Router
-- [ ] Layout responsivo com header dedicado
-- [ ] Toggle/Tabs para alternar entre 3 modos de criação
-- [ ] Área de preview do YAML gerado (sempre visível)
-- [ ] Actions: Save, Export YAML, Add to Collection, Cancel
-- [ ] Breadcrumb: Home > New Test Suite
-- [ ] Integração com sidebar (link "New Test" na CollectionsView)
-- [ ] Estado preservado ao alternar entre modos
+- [x] Rota `/new-test` configurada no React Router
+- [x] Layout responsivo com header dedicado
+- [x] Toggle/Tabs para alternar entre 3 modos de criação
+- [x] Área de preview do YAML gerado (sempre visível)
+- [x] Actions: Save, Export YAML, Add to Collection, Cancel
+- [x] Breadcrumb: Home > New Test Suite
+- [x] Integração com sidebar (link "New Test" na CollectionsView)
+- [x] Estado preservado ao alternar entre modos
 
 ## 🚀 Plano de Execução
 
