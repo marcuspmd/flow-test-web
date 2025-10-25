@@ -9,6 +9,7 @@ const SuiteEditorPage = lazy(() => import('../pages/SuiteEditorPage'));
 const TestRunnerPage = lazy(() => import('../pages/TestRunnerPage'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 const APIClientPage = lazy(() => import('../pages/APIClientPage'));
+const NewTestSuitePage = lazy(() => import('../pages/NewTestSuitePage'));
 
 /**
  * Application Routes Configuration
@@ -18,6 +19,14 @@ export const routes: RouteObject[] = [
   {
     path: '/',
     element: <MainWorkspace />,
+  },
+  {
+    path: '/new-test',
+    element: (
+      <MainWorkspace>
+        <NewTestSuitePage />
+      </MainWorkspace>
+    ),
   },
   {
     path: '/collections',

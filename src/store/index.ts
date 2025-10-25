@@ -9,6 +9,7 @@ import apiClientReducer from './slices/apiClientSlice';
 import apiEnvironmentsReducer from './slices/apiEnvironmentsSlice';
 import apiHistoryReducer from './slices/apiHistorySlice';
 import sidebarReducer from './slices/sidebarSlice';
+import testSuiteEditorReducer from './slices/testSuiteEditorSlice';
 
 /**
  * Root Reducer - Combina todos os slices
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
   apiEnvironments: apiEnvironmentsReducer,
   apiHistory: apiHistoryReducer,
   sidebar: sidebarReducer,
+  testSuiteEditor: testSuiteEditorReducer,
 });
 
 /**

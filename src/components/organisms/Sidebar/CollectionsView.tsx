@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setSearchQuery, toggleCollection, setSelectedRequest } from '../../../store/slices/sidebarSlice';
 import { SidebarHeaderActions } from './SidebarHeaderActions';
@@ -19,6 +20,7 @@ interface CollectionsViewProps {
 
 export const CollectionsView: React.FC<CollectionsViewProps> = ({ onCreateCollection, onRequestClick }) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { searchQuery, collections, selectedRequestId } = useAppSelector((state) => state.sidebar);
 
   const handleSearchChange = (query: string) => {
@@ -26,7 +28,8 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ onCreateCollec
   };
 
   const handleCreateClick = () => {
-    onCreateCollection?.();
+    // Navigate to new test suite page
+    navigate('/new-test');
   };
 
   const handleToggleCollection = (collectionId: string) => {
