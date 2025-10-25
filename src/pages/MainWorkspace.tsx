@@ -1,13 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
-import { PostmanSidebar } from '../components/organisms/Sidebar';
-import { useAppDispatch } from '../store';
-import { setCollections, setSelectedRequest } from '../store/slices/sidebarSlice';
+import {
+  MiniSidebar,
+  SidebarContentArea,
+  CollectionsView,
+  EnvironmentsView,
+  HistoryView,
+  SettingsView,
+} from '../components/organisms/Sidebar';
+import { useAppDispatch, useAppSelector } from '../store';
+import { setCollections, setSelectedRequest, setActiveView } from '../store/slices/sidebarSlice';
 import { mockCollections } from '../data/mockSidebarData';
-
-const DEFAULT_SIDEBAR_WIDTH = 280;
-const MIN_SIDEBAR_WIDTH = 200;
-const MAX_SIDEBAR_WIDTH = 500;
+import type { SidebarView } from '../types';
 
 const WorkspaceWrapper = styled.div`
   display: flex;
@@ -19,56 +23,13 @@ const WorkspaceWrapper = styled.div`
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 `;
 
-const SidebarContainer = styled.div<{ $width: number }>`
-  width: ${({ $width }) => $width}px;
+const SidebarContainer = styled.div`
+  display: flex;
   height: 100%;
   position: relative;
   flex-shrink: 0;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
   z-index: 10;
-`;
-
-const DragHandle = styled.div`
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 5px;
-  cursor: col-resize;
-  z-index: 100;
-  background: transparent;
-  transition: all 0.2s ease;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 3px;
-    height: 40px;
-    background: ${({ theme }) => theme['secondary-text']};
-    border-radius: 2px;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-
-  &:hover {
-    background: ${({ theme }) => theme.brand}22;
-
-    &::before {
-      opacity: 0.4;
-      background: ${({ theme }) => theme.brand};
-    }
-  }
-
-  &:active {
-    background: ${({ theme }) => theme.brand}44;
-
-    &::before {
-      opacity: 0.7;
-    }
-  }
 `;
 
 const MainSection = styled.div`
@@ -672,9 +633,8 @@ interface MainWorkspaceProps {
 
 export default function MainWorkspace({ children }: MainWorkspaceProps) {
   const dispatch = useAppDispatch();
+  const { activeView } = useAppSelector((state) => state.sidebar);
 
-  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
-  const [isDragging, setIsDragging] = useState(false);
   const [openTabs, setOpenTabs] = useState<OpenTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [currentMethod, setCurrentMethod] = useState('GET');
@@ -684,33 +644,14 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
   const [isDraggingVertical, setIsDraggingVertical] = useState(false);
   const [activeResponseTab, setActiveResponseTab] = useState('body');
 
-  const lastWidthRef = useRef(DEFAULT_SIDEBAR_WIDTH);
-
   // Inicializar dados de exemplo
   useEffect(() => {
     dispatch(setCollections(mockCollections));
   }, [dispatch]);
 
-  // Drag horizontal (sidebar)
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
-      e.preventDefault();
-      const newWidth = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, e.clientX));
-      if (Math.abs(newWidth - lastWidthRef.current) >= 3) {
-        lastWidthRef.current = newWidth;
-        setSidebarWidth(newWidth);
-      }
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (isDragging) setIsDragging(false);
-    if (isDraggingVertical) setIsDraggingVertical(false);
-  };
-
-  const handleDragStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
+  // Handle view change
+  const handleViewChange = (view: SidebarView) => {
+    dispatch(setActiveView(view));
   };
 
   // Drag vertical (request/response)
@@ -731,18 +672,20 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
     }
   };
 
+  const handleMouseUp = () => {
+    if (isDraggingVertical) setIsDraggingVertical(false);
+  };
+
   useEffect(() => {
-    document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mousemove', handleVerticalMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mousemove', handleVerticalMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging, isDraggingVertical]);
+  }, [isDraggingVertical]);
 
   const handleCreateCollection = () => {
     console.log('Create collection');
@@ -820,11 +763,26 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
     return colors[method] || '#999';
   };
 
+  const renderSidebarView = () => {
+    switch (activeView) {
+      case 'collections':
+        return <CollectionsView onCreateCollection={handleCreateCollection} onRequestClick={handleRequestClick} />;
+      case 'environments':
+        return <EnvironmentsView />;
+      case 'history':
+        return <HistoryView />;
+      case 'settings':
+        return <SettingsView />;
+      default:
+        return <CollectionsView onCreateCollection={handleCreateCollection} onRequestClick={handleRequestClick} />;
+    }
+  };
+
   return (
     <WorkspaceWrapper>
-      <SidebarContainer $width={sidebarWidth}>
-        <PostmanSidebar onCreateCollection={handleCreateCollection} onRequestClick={handleRequestClick} />
-        <DragHandle onMouseDown={handleDragStart} />
+      <SidebarContainer>
+        <MiniSidebar activeView={activeView} onViewChange={handleViewChange} />
+        <SidebarContentArea activeView={activeView}>{renderSidebarView()}</SidebarContentArea>
       </SidebarContainer>
 
       <MainSection>
