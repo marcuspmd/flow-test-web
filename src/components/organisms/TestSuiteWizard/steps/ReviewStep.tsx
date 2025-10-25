@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { WizardStepProps } from '../WizardContainer';
 import { TestStep } from '../types';
@@ -79,20 +79,30 @@ const MethodBadge = styled.span<{ method: string }>`
   font-weight: 600;
   background: ${({ method }) => {
     switch (method) {
-      case 'GET': return '#10b98144';
-      case 'POST': return '#3b82f644';
-      case 'PUT': return '#f59e0b44';
-      case 'DELETE': return '#ef444444';
-      default: return '#6b728044';
+      case 'GET':
+        return '#10b98144';
+      case 'POST':
+        return '#3b82f644';
+      case 'PUT':
+        return '#f59e0b44';
+      case 'DELETE':
+        return '#ef444444';
+      default:
+        return '#6b728044';
     }
   }};
   color: ${({ method }) => {
     switch (method) {
-      case 'GET': return '#10b981';
-      case 'POST': return '#3b82f6';
-      case 'PUT': return '#f59e0b';
-      case 'DELETE': return '#ef4444';
-      default: return '#6b7280';
+      case 'GET':
+        return '#10b981';
+      case 'POST':
+        return '#3b82f6';
+      case 'PUT':
+        return '#f59e0b';
+      case 'DELETE':
+        return '#ef4444';
+      default:
+        return '#6b7280';
     }
   }};
 `;
@@ -111,8 +121,8 @@ const ValidationBadge = styled.div<{ $valid: boolean }>`
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
-  background: ${({ $valid }) => $valid ? '#10b98122' : '#ef444422'};
-  color: ${({ $valid }) => $valid ? '#10b981' : '#ef4444'};
+  background: ${({ $valid }) => ($valid ? '#10b98122' : '#ef444422')};
+  color: ${({ $valid }) => ($valid ? '#10b981' : '#ef4444')};
   margin-bottom: 16px;
 `;
 
@@ -121,12 +131,20 @@ const ReviewStep: React.FC<WizardStepProps> = ({ data, onValidation }) => {
   const hasSteps = Boolean(data?.steps && data.steps.length > 0);
   const isValid = hasRequiredFields && hasSteps;
 
+  // Use ref to prevent infinite loops from callback changes
+  const onValidationRef = useRef(onValidation);
+
+  // Update ref when callback changes
   useEffect(() => {
-    onValidation?.({
+    onValidationRef.current = onValidation;
+  }, [onValidation]);
+
+  useEffect(() => {
+    onValidationRef.current?.({
       isValid,
       errors: !isValid ? ['Please complete all required fields and add at least one step'] : undefined,
     });
-  }, [isValid, onValidation]);
+  }, [isValid]); // Only depend on actual state values
 
   return (
     <StepContainer>
@@ -172,9 +190,7 @@ const ReviewStep: React.FC<WizardStepProps> = ({ data, onValidation }) => {
         {data?.variables && Object.keys(data.variables).length > 0 && (
           <SummaryRow>
             <SummaryLabel>Variables</SummaryLabel>
-            <SummaryValue>
-              {Object.keys(data.variables).length} variable(s) defined
-            </SummaryValue>
+            <SummaryValue>{Object.keys(data.variables).length} variable(s) defined</SummaryValue>
           </SummaryRow>
         )}
 
@@ -186,9 +202,7 @@ const ReviewStep: React.FC<WizardStepProps> = ({ data, onValidation }) => {
               <StepsList>
                 {data.steps.map((step: TestStep, index: number) => (
                   <StepItem key={index}>
-                    <MethodBadge method={step.request?.method || 'GET'}>
-                      {step.request?.method || 'GET'}
-                    </MethodBadge>
+                    <MethodBadge method={step.request?.method || 'GET'}>{step.request?.method || 'GET'}</MethodBadge>
                     <StepName>{step.name}</StepName>
                   </StepItem>
                 ))}

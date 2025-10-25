@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import { WizardStepProps } from '../WizardContainer';
 
@@ -108,6 +108,16 @@ const BasicInfoStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValidation
   const [description, setDescription] = useState(data?.description || '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Use refs to prevent infinite loops from callback changes
+  const onUpdateRef = useRef(onUpdate);
+  const onValidationRef = useRef(onValidation);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+    onValidationRef.current = onValidation;
+  }, [onUpdate, onValidation]);
+
   // Auto-generate node_id from suite_name
   const generateNodeId = (name: string) => {
     return name
@@ -134,24 +144,24 @@ const BasicInfoStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValidation
 
     setErrors(newErrors);
 
-    // Update parent
-    onUpdate?.({
+    // Update parent using refs to avoid dependency issues
+    onUpdateRef.current?.({
       suite_name: suiteName,
       node_id: nodeId,
       description: description || undefined,
     });
 
     // Update validation status
-    onValidation?.({
+    onValidationRef.current?.({
       isValid: Object.keys(newErrors).length === 0,
       errors: Object.values(newErrors),
     });
-  }, [suiteName, nodeId, description, onUpdate, onValidation]);
+  }, [suiteName, nodeId, description]); // Only depend on actual state values
 
   const handleSuiteNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
     setSuiteName(name);
-    
+
     // Auto-generate node_id if it hasn't been manually edited
     if (!nodeId || nodeId === generateNodeId(suiteName)) {
       setNodeId(generateNodeId(name));
@@ -191,9 +201,7 @@ const BasicInfoStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValidation
           pattern="^[a-z0-9-]+$"
         />
         {errors.node_id && <ErrorMessage>{errors.node_id}</ErrorMessage>}
-        <HelpText>
-          Unique identifier in kebab-case (lowercase letters, numbers, and hyphens only)
-        </HelpText>
+        <HelpText>Unique identifier in kebab-case (lowercase letters, numbers, and hyphens only)</HelpText>
       </FormField>
 
       <FormField>

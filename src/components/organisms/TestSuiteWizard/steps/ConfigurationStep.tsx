@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import { WizardStepProps } from '../WizardContainer';
 
@@ -151,15 +151,25 @@ const ConfigurationStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValida
   const [executionMode, setExecutionMode] = useState(data?.execution_mode || 'sequential');
   const [variables, setVariables] = useState<Record<string, string>>(data?.variables || {});
 
+  // Use refs to prevent infinite loops from callback changes
+  const onUpdateRef = useRef(onUpdate);
+  const onValidationRef = useRef(onValidation);
+
+  // Update refs when callbacks change
   useEffect(() => {
-    onUpdate?.({
+    onUpdateRef.current = onUpdate;
+    onValidationRef.current = onValidation;
+  }, [onUpdate, onValidation]);
+
+  useEffect(() => {
+    onUpdateRef.current?.({
       base_url: baseUrl || undefined,
       execution_mode: executionMode,
       variables: Object.keys(variables).length > 0 ? variables : undefined,
     });
 
-    onValidation?.({ isValid: true });
-  }, [baseUrl, executionMode, variables, onUpdate, onValidation]);
+    onValidationRef.current?.({ isValid: true });
+  }, [baseUrl, executionMode, variables]); // Only depend on actual state values
 
   const handleAddVariable = () => {
     const newKey = `var_${Object.keys(variables).length + 1}`;
@@ -202,23 +212,16 @@ const ConfigurationStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValida
             onChange={(e) => setBaseUrl(e.target.value)}
             placeholder="https://api.example.com"
           />
-          <HelpText>
-            Optional base URL to prepend to all request URLs in this suite
-          </HelpText>
+          <HelpText>Optional base URL to prepend to all request URLs in this suite</HelpText>
         </FormField>
 
         <FormField>
           <Label>Execution Mode</Label>
-          <Select
-            value={executionMode}
-            onChange={(e) => setExecutionMode(e.target.value)}
-          >
+          <Select value={executionMode} onChange={(e) => setExecutionMode(e.target.value)}>
             <option value="sequential">Sequential</option>
             <option value="parallel">Parallel</option>
           </Select>
-          <HelpText>
-            Sequential runs steps one by one, parallel runs them concurrently
-          </HelpText>
+          <HelpText>Sequential runs steps one by one, parallel runs them concurrently</HelpText>
         </FormField>
       </FormSection>
 
@@ -241,17 +244,13 @@ const ConfigurationStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValida
                 value={value}
                 onChange={(e) => handleVariableValueChange(key, e.target.value)}
               />
-              <RemoveButton onClick={() => handleRemoveVariable(key)}>
-                ✕
-              </RemoveButton>
+              <RemoveButton onClick={() => handleRemoveVariable(key)}>✕</RemoveButton>
             </KeyValueRow>
           ))}
         </KeyValueEditor>
 
         <div style={{ marginTop: 12 }}>
-          <AddButton onClick={handleAddVariable}>
-            + Add Variable
-          </AddButton>
+          <AddButton onClick={handleAddVariable}>+ Add Variable</AddButton>
         </div>
       </FormSection>
     </StepContainer>

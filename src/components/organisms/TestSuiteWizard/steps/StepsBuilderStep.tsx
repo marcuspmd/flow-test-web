@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import { WizardStepProps } from '../WizardContainer';
 import { TestStep } from '../types';
@@ -59,20 +59,30 @@ const MethodBadge = styled.span<{ method: string }>`
   font-weight: 600;
   background: ${({ method }) => {
     switch (method) {
-      case 'GET': return '#10b98144';
-      case 'POST': return '#3b82f644';
-      case 'PUT': return '#f59e0b44';
-      case 'DELETE': return '#ef444444';
-      default: return '#6b728044';
+      case 'GET':
+        return '#10b98144';
+      case 'POST':
+        return '#3b82f644';
+      case 'PUT':
+        return '#f59e0b44';
+      case 'DELETE':
+        return '#ef444444';
+      default:
+        return '#6b728044';
     }
   }};
   color: ${({ method }) => {
     switch (method) {
-      case 'GET': return '#10b981';
-      case 'POST': return '#3b82f6';
-      case 'PUT': return '#f59e0b';
-      case 'DELETE': return '#ef4444';
-      default: return '#6b7280';
+      case 'GET':
+        return '#10b981';
+      case 'POST':
+        return '#3b82f6';
+      case 'PUT':
+        return '#f59e0b';
+      case 'DELETE':
+        return '#ef4444';
+      default:
+        return '#6b7280';
     }
   }};
 `;
@@ -205,16 +215,26 @@ const StepsBuilderStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValidat
   const [steps, setSteps] = useState<TestStep[]>(data?.steps || []);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
+  // Use refs to prevent infinite loops from callback changes
+  const onUpdateRef = useRef(onUpdate);
+  const onValidationRef = useRef(onValidation);
+
+  // Update refs when callbacks change
   useEffect(() => {
-    onUpdate?.({
+    onUpdateRef.current = onUpdate;
+    onValidationRef.current = onValidation;
+  }, [onUpdate, onValidation]);
+
+  useEffect(() => {
+    onUpdateRef.current?.({
       steps: steps.length > 0 ? steps : undefined,
     });
 
-    onValidation?.({
+    onValidationRef.current?.({
       isValid: steps.length > 0,
       errors: steps.length === 0 ? ['At least one test step is required'] : undefined,
     });
-  }, [steps, onUpdate, onValidation]);
+  }, [steps]); // Only depend on actual state values
 
   const handleAddStep = () => {
     const newStep: TestStep = {
@@ -262,17 +282,11 @@ const StepsBuilderStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValidat
           {steps.map((step, index) => (
             <StepCard key={index}>
               <StepCardHeader onClick={() => toggleExpand(index)}>
-                <MethodBadge method={step.request?.method || 'GET'}>
-                  {step.request?.method || 'GET'}
-                </MethodBadge>
+                <MethodBadge method={step.request?.method || 'GET'}>{step.request?.method || 'GET'}</MethodBadge>
                 <StepName>{step.name}</StepName>
                 <StepActions onClick={(e) => e.stopPropagation()}>
-                  <IconButton onClick={() => toggleExpand(index)}>
-                    {expandedIndex === index ? '▲' : '▼'}
-                  </IconButton>
-                  <DeleteButton onClick={() => handleDeleteStep(index)}>
-                    ✕
-                  </DeleteButton>
+                  <IconButton onClick={() => toggleExpand(index)}>{expandedIndex === index ? '▲' : '▼'}</IconButton>
+                  <DeleteButton onClick={() => handleDeleteStep(index)}>✕</DeleteButton>
                 </StepActions>
               </StepCardHeader>
 
@@ -326,9 +340,7 @@ const StepsBuilderStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValidat
         </StepsList>
       )}
 
-      <AddButton onClick={handleAddStep}>
-        + Add Test Step
-      </AddButton>
+      <AddButton onClick={handleAddStep}>+ Add Test Step</AddButton>
     </StepContainer>
   );
 };

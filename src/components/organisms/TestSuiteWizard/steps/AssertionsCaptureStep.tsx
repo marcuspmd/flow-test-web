@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { WizardStepProps } from '../WizardContainer';
 
@@ -72,10 +72,18 @@ const PlaceholderContent = styled.div`
 `;
 
 const AssertionsCaptureStep: React.FC<WizardStepProps> = ({ onValidation }) => {
+  // Use ref to prevent infinite loops from callback changes
+  const onValidationRef = useRef(onValidation);
+
+  // Update ref when callback changes
+  useEffect(() => {
+    onValidationRef.current = onValidation;
+  }, [onValidation]);
+
   useEffect(() => {
     // This step is optional, so always mark as valid
-    onValidation?.({ isValid: true });
-  }, [onValidation]);
+    onValidationRef.current?.({ isValid: true });
+  }, []); // Empty deps - only run once on mount
 
   return (
     <StepContainer>
@@ -87,9 +95,8 @@ const AssertionsCaptureStep: React.FC<WizardStepProps> = ({ onValidation }) => {
       <InfoBox>
         <h3>📝 About This Step</h3>
         <p>
-          Assertions validate your API responses, and capture allows you to extract values
-          for use in subsequent steps. This step is optional - you can add these directly
-          in the YAML editor after generating your test suite.
+          Assertions validate your API responses, and capture allows you to extract values for use in subsequent steps.
+          This step is optional - you can add these directly in the YAML editor after generating your test suite.
         </p>
       </InfoBox>
 

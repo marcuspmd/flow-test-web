@@ -15,8 +15,8 @@ const initialState: SidebarState = {
   collections: [],
   environments: [],
   history: [],
-  expandedCollections: new Set<string>(),
-  expandedFolders: new Set<string>(),
+  expandedCollections: [], // Changed from Set to Array for Redux serialization
+  expandedFolders: [], // Changed from Set to Array for Redux serialization
   selectedRequestId: undefined,
   sidebarWidth: 280,
   isCollapsed: false,
@@ -54,7 +54,7 @@ const sidebarSlice = createSlice({
 
     removeCollection: (state, action: PayloadAction<string>) => {
       state.collections = state.collections.filter((c) => c.id !== action.payload);
-      state.expandedCollections.delete(action.payload);
+      state.expandedCollections = state.expandedCollections.filter((id) => id !== action.payload);
     },
 
     toggleCollection: (state, action: PayloadAction<string>) => {
@@ -65,9 +65,11 @@ const sidebarSlice = createSlice({
         collection.isExpanded = !collection.isExpanded;
 
         if (collection.isExpanded) {
-          state.expandedCollections.add(collectionId);
+          if (!state.expandedCollections.includes(collectionId)) {
+            state.expandedCollections.push(collectionId);
+          }
         } else {
-          state.expandedCollections.delete(collectionId);
+          state.expandedCollections = state.expandedCollections.filter((id) => id !== collectionId);
         }
       }
     },

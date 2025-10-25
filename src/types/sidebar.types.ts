@@ -58,8 +58,8 @@ export interface SidebarState {
   collections: SidebarCollection[];
   environments: SidebarEnvironment[];
   history: SidebarHistoryItem[];
-  expandedCollections: Set<string>;
-  expandedFolders: Set<string>;
+  expandedCollections: string[]; // Changed from Set to Array for Redux serialization
+  expandedFolders: string[]; // Changed from Set to Array for Redux serialization
   selectedRequestId?: string;
   sidebarWidth: number;
   isCollapsed: boolean;
