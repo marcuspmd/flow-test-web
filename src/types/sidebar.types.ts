@@ -6,6 +6,8 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 
 
 export type SidebarTab = 'collections' | 'environments' | 'flows' | 'history';
 
+export type SidebarView = 'collections' | 'environments' | 'history' | 'settings';
+
 export interface SidebarRequest {
   id: string;
   name: string;
@@ -51,6 +53,7 @@ export interface SidebarHistoryItem {
 
 export interface SidebarState {
   activeTab: SidebarTab;
+  activeView: SidebarView;
   searchQuery: string;
   collections: SidebarCollection[];
   environments: SidebarEnvironment[];

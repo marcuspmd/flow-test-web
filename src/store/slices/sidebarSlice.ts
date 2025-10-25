@@ -1,8 +1,16 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { SidebarState, SidebarTab, SidebarCollection, SidebarEnvironment, SidebarHistoryItem } from '../../types';
+import type {
+  SidebarState,
+  SidebarTab,
+  SidebarView,
+  SidebarCollection,
+  SidebarEnvironment,
+  SidebarHistoryItem,
+} from '../../types';
 
 const initialState: SidebarState = {
   activeTab: 'collections',
+  activeView: 'collections',
   searchQuery: '',
   collections: [],
   environments: [],
@@ -20,6 +28,10 @@ const sidebarSlice = createSlice({
   reducers: {
     setActiveTab: (state, action: PayloadAction<SidebarTab>) => {
       state.activeTab = action.payload;
+    },
+
+    setActiveView: (state, action: PayloadAction<SidebarView>) => {
+      state.activeView = action.payload;
     },
 
     setSearchQuery: (state, action: PayloadAction<string>) => {
@@ -90,6 +102,7 @@ const sidebarSlice = createSlice({
 
 export const {
   setActiveTab,
+  setActiveView,
   setSearchQuery,
   setCollections,
   addCollection,
