@@ -14,4 +14,3 @@ export { EnvironmentsView } from './EnvironmentsView';
 export { HistoryView } from './HistoryView';
 export { SettingsView } from './SettingsView';
 export type { SidebarProps } from './Sidebar';
-export type { SidebarView } from './MiniSidebar';

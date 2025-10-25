@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
-import type { SidebarView } from './MiniSidebar';
+import type { SidebarView } from '../../../types';
 
 const ContentAreaContainer = styled.div<{ $width: number }>`
   width: ${({ $width }) => $width}px;

@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { VscFiles, VscSettings, VscHistory } from 'react-icons/vsc';
 import { MdOutlineSettingsApplications } from 'react-icons/md';
+import type { SidebarView } from '../../../types';
 
 const MiniSidebarContainer = styled.div`
   display: flex;
@@ -61,8 +62,6 @@ const Tooltip = styled.div<{ $visible: boolean }>`
   border: 1px solid ${({ theme }) => theme['layout-border']};
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 `;
-
-export type SidebarView = 'collections' | 'environments' | 'history' | 'settings';
 
 interface SidebarViewConfig {
   id: SidebarView;
