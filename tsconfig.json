@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"],
+      "@components": ["./components"],
+      "@components/*": ["./components/*"],
+      "@pages": ["./pages"],
+      "@pages/*": ["./pages/*"],
+      "@hooks": ["./hooks"],
+      "@hooks/*": ["./hooks/*"],
+      "@providers": ["./providers"],
+      "@providers/*": ["./providers/*"],
+      "@utils": ["./utils"],
+      "@utils/*": ["./utils/*"],
+      "@styles": ["./styles"],
+      "@styles/*": ["./styles/*"],
+      "@themes": ["./themes"],
+      "@themes/*": ["./themes/*"],
+      "@types": ["./types"],
+      "@types/*": ["./types/*"]
+    },
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": false,
+    "incremental": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
+}

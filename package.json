@@ -1,0 +1,95 @@
+{
+  "name": "@flow-test/app",
+  "version": "1.0.0",
+  "license": "MIT",
+  "private": true,
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:electron\" \"npm run dev:renderer\"",
+    "dev:renderer": "rsbuild dev",
+    "dev:electron": "tsc -p electron/tsconfig.json && electron .",
+    "build": "npm run build:renderer && npm run build:electron",
+    "build:renderer": "rsbuild build -m production",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "start": "electron .",
+    "package": "electron-builder",
+    "preview": "rsbuild preview",
+    "test": "jest",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint \"./src/**/*.{ts,tsx}\"",
+    "prettier": "prettier --write \"./src/**/*.{ts,tsx,json}\""
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.0.15",
+    "@monaco-editor/react": "^4.7.0",
+    "@reduxjs/toolkit": "^1.9.7",
+    "@tabler/icons": "^1.46.0",
+    "@tippyjs/react": "^4.2.6",
+    "classnames": "^2.3.2",
+    "js-yaml": "^4.1.0",
+    "monaco-editor": "^0.54.0",
+    "monaco-yaml": "^5.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-redux": "^8.1.3",
+    "react-router-dom": "^6.30.1",
+    "styled-components": "^6.1.8"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^1.1.21",
+    "@rsbuild/plugin-babel": "^1.0.3",
+    "@rsbuild/plugin-react": "^1.1.2",
+    "@rsbuild/plugin-sass": "^1.1.0",
+    "@rsbuild/plugin-styled-components": "^1.0.3",
+    "@rsbuild/plugin-type-check": "^1.1.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@types/styled-components": "^5.1.34",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "postcss": "^8.4.32",
+    "prettier": "^3.1.1",
+    "sass": "^1.69.5",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3"
+  },
+  "build": {
+    "appId": "com.flowtest.app",
+    "productName": "Flow Test Engine",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
+  }
+}
