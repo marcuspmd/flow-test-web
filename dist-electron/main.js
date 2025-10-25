@@ -246,9 +246,14 @@ electron_1.ipcMain.handle('write-file', async (_event, filePath, content) => {
 // Save test suite with dialog
 electron_1.ipcMain.handle('save-test-suite', async (_event, { content, suggestedName }) => {
     try {
+        // Sanitize filename to prevent path traversal
+        const sanitizedName = suggestedName
+            .replace(/[/\\:*?"<>|]/g, '-') // Remove invalid characters
+            .replace(/\.\./g, '-') // Remove parent directory references
+            .substring(0, 255); // Limit filename length
         const result = await electron_1.dialog.showSaveDialog(mainWindow, {
             title: 'Save Test Suite',
-            defaultPath: `${suggestedName || 'test-suite'}.yaml`,
+            defaultPath: `${sanitizedName || 'test-suite'}.yaml`,
             filters: [
                 { name: 'YAML Files', extensions: ['yaml', 'yml'] },
                 { name: 'All Files', extensions: ['*'] },

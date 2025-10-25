@@ -275,9 +275,15 @@ ipcMain.handle('write-file', async (_event, filePath: string, content: string) =
 // Save test suite with dialog
 ipcMain.handle('save-test-suite', async (_event, { content, suggestedName }: { content: string; suggestedName: string }) => {
   try {
+    // Sanitize filename to prevent path traversal
+    const sanitizedName = suggestedName
+      .replace(/[/\\:*?"<>|]/g, '-') // Remove invalid characters
+      .replace(/\.\./g, '-') // Remove parent directory references
+      .substring(0, 255); // Limit filename length
+
     const result = await dialog.showSaveDialog(mainWindow!, {
       title: 'Save Test Suite',
-      defaultPath: `${suggestedName || 'test-suite'}.yaml`,
+      defaultPath: `${sanitizedName || 'test-suite'}.yaml`,
       filters: [
         { name: 'YAML Files', extensions: ['yaml', 'yml'] },
         { name: 'All Files', extensions: ['*'] },

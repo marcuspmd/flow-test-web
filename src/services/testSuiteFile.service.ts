@@ -3,6 +3,8 @@
  * Handles saving and exporting test suite YAML files
  */
 
+import * as yaml from 'js-yaml';
+
 export interface SaveResult {
   success?: boolean;
   canceled?: boolean;
@@ -60,8 +62,7 @@ export const validateTestSuiteYAML = (yamlContent: string): { valid: boolean; er
 
   try {
     // Try to parse as YAML
-    const yaml = require('js-yaml');
-    const parsed = yaml.load(yamlContent);
+    const parsed = yaml.load(yamlContent) as any;
 
     // Check for required fields
     if (!parsed) {

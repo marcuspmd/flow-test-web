@@ -70,10 +70,17 @@ const createToastElement = (options: ToastOptions): HTMLDivElement => {
     warning: '⚠',
   };
 
-  toast.innerHTML = `
-    <span style="font-size: 18px; font-weight: bold;">${icons[type]}</span>
-    <span>${message}</span>
-  `;
+  // Create icon element
+  const iconElement = document.createElement('span');
+  iconElement.style.cssText = 'font-size: 18px; font-weight: bold;';
+  iconElement.textContent = icons[type];
+
+  // Create message element (using textContent to prevent XSS)
+  const messageElement = document.createElement('span');
+  messageElement.textContent = message;
+
+  toast.appendChild(iconElement);
+  toast.appendChild(messageElement);
 
   return toast;
 };
