@@ -14,6 +14,7 @@ import {
 } from '../store/slices/testSuiteEditorSlice';
 import * as yaml from 'js-yaml';
 import { YAMLEditor } from '../components/organisms/YAMLEditor';
+import { WizardContainer } from '../components/organisms/TestSuiteWizard';
 
 const PageContainer = styled.div`
   display: flex;
@@ -387,17 +388,7 @@ export default function NewTestSuitePage() {
   const renderModeContent = () => {
     switch (mode) {
       case 'wizard':
-        return (
-          <PlaceholderContent>
-            <div className="icon">🧙</div>
-            <h2>Wizard Mode</h2>
-            <p>
-              Step-by-step guided creation of test suites.
-              <br />
-              This will be implemented in TASK_004.
-            </p>
-          </PlaceholderContent>
-        );
+        return <WizardContainer />;
       case 'yaml':
         return (
           <YAMLEditorContainer>
