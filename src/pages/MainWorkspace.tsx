@@ -1,12 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import {
-  MiniSidebar,
-  SidebarContentArea,
-  SidebarViewRenderer,
-} from '../components/organisms/Sidebar';
+import { MiniSidebar, SidebarContentArea, SidebarViewRenderer } from '../components/organisms/Sidebar';
+import { RequestPane, RequestData } from '../components/organisms/RequestPane';
+import { ResponsePane, ResponseData } from '../components/organisms/ResponsePane';
 import { useAppDispatch, useAppSelector } from '../store';
 import { setCollections, setSelectedRequest, setActiveView } from '../store/slices/sidebarSlice';
+import { updateRequest } from '../store/slices/apiClientSlice';
 import { mockCollections } from '../data/mockSidebarData';
 import type { SidebarView } from '../types';
 
@@ -37,86 +36,6 @@ const MainSection = styled.div`
   background: ${({ theme }) => theme['primary-theme']};
 `;
 
-const TabsContainer = styled.div`
-  display: flex;
-  align-items: center;
-  background: ${({ theme }) => theme['sidebar-background']};
-  border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
-  overflow-x: auto;
-  min-height: 42px;
-  padding: 0 8px;
-  gap: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-
-  &::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme['layout-border']};
-    border-radius: 3px;
-
-    &:hover {
-      background: ${({ theme }) => theme['secondary-text']};
-    }
-  }
-`;
-
-const Tab = styled.div<{ $active?: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  font-size: 13px;
-  cursor: pointer;
-  background: ${({ $active, theme }) => ($active ? theme['primary-theme'] : 'transparent')};
-  border-radius: 6px 6px 0 0;
-  border-bottom: ${({ $active, theme }) => ($active ? `2px solid ${theme.brand}` : '2px solid transparent')};
-  transition: all 0.15s ease;
-  user-select: none;
-  white-space: nowrap;
-  position: relative;
-  margin-bottom: -1px;
-  ${({ $active }) => $active && 'box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);'}
-
-  &:hover {
-    background: ${({ $active, theme }) =>
-      $active ? theme['primary-theme'] : theme['sidebar-collection-item-active-background']};
-    ${({ $active }) => !$active && 'transform: translateY(-1px);'}
-  }
-
-  .tab-method {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 3px 7px;
-    border-radius: 4px;
-    color: white;
-    letter-spacing: 0.3px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  }
-
-  .tab-close {
-    margin-left: 4px;
-    padding: 3px 5px;
-    border-radius: 4px;
-    opacity: 0.5;
-    transition: all 0.15s ease;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      opacity: 1;
-      background: rgba(0, 0, 0, 0.1);
-    }
-  }
-`;
-
 const ContentArea = styled.div`
   flex: 1;
   display: flex;
@@ -124,328 +43,39 @@ const ContentArea = styled.div`
   overflow: hidden;
 `;
 
-const RequestPanel = styled.div<{ $height: number }>`
+const ResizablePanel = styled.div<{ $height: number }>`
   height: ${({ $height }) => $height}%;
   display: flex;
   flex-direction: column;
-  border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
   overflow: hidden;
-`;
-
-const PanelHeader = styled.div`
-  padding: 10px 16px;
-  background: ${({ theme }) => theme['sidebar-background']};
   border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: ${({ theme }) => theme['secondary-text']};
-
-  .panel-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .panel-icon {
-      font-size: 14px;
-      opacity: 0.7;
-    }
-  }
-
-  .panel-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .panel-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    background: ${({ theme }) => theme['primary-theme']};
-    color: ${({ theme }) => theme['primary-text']};
-    text-transform: none;
-    letter-spacing: normal;
-  }
-
-  .panel-action-btn {
-    padding: 4px 8px;
-    border: none;
-    background: transparent;
-    color: ${({ theme }) => theme['secondary-text']};
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 11px;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background: ${({ theme }) => theme['primary-theme']};
-      color: ${({ theme }) => theme['primary-text']};
-    }
-  }
-`;
-
-const URLBar = styled.div`
-  padding: 16px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  background: ${({ theme }) => theme['primary-theme']};
-  border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
-
-  .url-input-group {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border: 1px solid ${({ theme }) => theme['layout-border']};
-    border-radius: 6px;
-    background: ${({ theme }) => theme['primary-theme']};
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-
-    &:focus-within {
-      border-color: ${({ theme }) => theme.brand};
-      box-shadow: 0 0 0 3px ${({ theme }) => theme.brand}33;
-    }
-
-    &:hover {
-      border-color: ${({ theme }) => theme.brand}66;
-    }
-
-    .url-icon {
-      font-size: 14px;
-      opacity: 0.5;
-    }
-
-    input {
-      flex: 1;
-      border: none;
-      background: transparent;
-      color: ${({ theme }) => theme['primary-text']};
-      font-size: 13px;
-      outline: none;
-
-      &::placeholder {
-        color: ${({ theme }) => theme['secondary-text']};
-        opacity: 0.6;
-      }
-    }
-  }
-
-  select {
-    padding: 8px 14px;
-    border: 1px solid ${({ theme }) => theme['layout-border']};
-    border-radius: 6px;
-    background: ${({ theme }) => theme['sidebar-background']};
-    color: ${({ theme }) => theme['primary-text']};
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    outline: none;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-
-    &:hover {
-      border-color: ${({ theme }) => theme.brand};
-    }
-
-    &:focus {
-      border-color: ${({ theme }) => theme.brand};
-      box-shadow: 0 0 0 3px ${({ theme }) => theme.brand}33;
-    }
-  }
-
-  button {
-    padding: 8px 24px;
-    border: none;
-    border-radius: 6px;
-    background: ${({ theme }) => theme.brand};
-    color: white;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    &:active {
-      transform: translateY(0);
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
-  }
-`;
-
-const RequestTabs = styled.div`
-  display: flex;
-  gap: 20px;
-  padding: 0 16px;
-  background: ${({ theme }) => theme['sidebar-background']};
-  border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
-  font-size: 13px;
-`;
-
-const RequestTab = styled.div<{ $active?: boolean }>`
-  padding: 12px 0;
-  cursor: pointer;
-  color: ${({ $active, theme }) => ($active ? theme['primary-text'] : theme['secondary-text'])};
-  border-bottom: ${({ $active, theme }) => ($active ? `2px solid ${theme.brand}` : '2px solid transparent')};
-  font-weight: ${({ $active }) => ($active ? 600 : 500)};
-  transition: all 0.2s ease;
   position: relative;
-
-  &:hover {
-    color: ${({ theme }) => theme['primary-text']};
-  }
-
-  ${({ $active, theme }) =>
-    $active &&
-    `
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: ${theme.brand};
-      animation: slideIn 0.2s ease;
-    }
-
-    @keyframes slideIn {
-      from {
-        transform: scaleX(0);
-      }
-      to {
-        transform: scaleX(1);
-      }
-    }
-  `}
 `;
 
-const RequestBody = styled.div`
-  flex: 1;
-  padding: 20px;
-  overflow: auto;
-  background: ${({ theme }) => theme['primary-theme']};
-
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme['layout-border']};
-    border-radius: 4px;
-
-    &:hover {
-      background: ${({ theme }) => theme['secondary-text']};
-    }
-  }
-`;
-
-const VerticalDragHandle = styled.div`
-  height: 5px;
+const ResizeHandle = styled.div`
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  height: 6px;
   cursor: row-resize;
-  background: ${({ theme }) => theme['layout-border']};
-  transition: all 0.2s ease;
-  position: relative;
-  z-index: 10;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 40px;
-    height: 3px;
-    background: ${({ theme }) => theme['secondary-text']};
-    border-radius: 2px;
-    opacity: 0.3;
-    transition: opacity 0.2s ease;
-  }
+  z-index: 100;
+  background: transparent;
 
   &:hover {
-    background: ${({ theme }) => theme.brand}33;
-
-    &::before {
-      opacity: 0.6;
-      background: ${({ theme }) => theme.brand};
-    }
+    background: rgba(0, 122, 204, 0.3);
   }
 
   &:active {
-    background: ${({ theme }) => theme.brand}66;
+    background: #007acc;
   }
 `;
 
-const ResponsePanel = styled.div`
+const BottomPanel = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-`;
-
-const ResponseTabs = styled.div`
-  display: flex;
-  gap: 20px;
-  padding: 0 16px;
-  background: ${({ theme }) => theme['sidebar-background']};
-  border-bottom: 1px solid ${({ theme }) => theme['layout-border']};
-  font-size: 13px;
-`;
-
-const ResponseBody = styled.div`
-  flex: 1;
-  padding: 20px;
-  overflow: auto;
-  background: ${({ theme }) => theme['primary-theme']};
-
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme['layout-border']};
-    border-radius: 4px;
-
-    &:hover {
-      background: ${({ theme }) => theme['secondary-text']};
-    }
-  }
-
-  pre {
-    margin: 0;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 13px;
-    line-height: 1.6;
-    padding: 16px;
-    background: ${({ theme }) => theme['sidebar-background']};
-    border-radius: 6px;
-    border: 1px solid ${({ theme }) => theme['layout-border']};
-  }
 `;
 
 const WelcomeScreen = styled.div`
@@ -553,47 +183,6 @@ const WelcomeScreen = styled.div`
   }
 `;
 
-const EmptyState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 40px;
-  color: ${({ theme }) => theme['secondary-text']};
-  text-align: center;
-  opacity: 0.7;
-  font-size: 13px;
-  animation: fadeIn 0.3s ease;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(5px);
-    }
-    to {
-      opacity: 0.7;
-      transform: translateY(0);
-    }
-  }
-
-  .icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.5;
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 0.5;
-    }
-    50% {
-      opacity: 0.3;
-    }
-  }
-`;
-
 const KeyboardHint = styled.div`
   display: inline-flex;
   align-items: center;
@@ -617,13 +206,6 @@ const KeyboardHint = styled.div`
   }
 `;
 
-interface OpenTab {
-  id: string;
-  name: string;
-  method: string;
-  url: string;
-}
-
 interface MainWorkspaceProps {
   children?: React.ReactNode;
 }
@@ -632,14 +214,171 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
   const dispatch = useAppDispatch();
   const { activeView } = useAppSelector((state) => state.sidebar);
 
-  const [openTabs, setOpenTabs] = useState<OpenTab[]>([]);
-  const [activeTabId, setActiveTabId] = useState<string | null>(null);
-  const [currentMethod, setCurrentMethod] = useState('GET');
-  const [currentUrl, setCurrentUrl] = useState('https://api.example.com/endpoint');
-  const [activeRequestTab, setActiveRequestTab] = useState('params');
+  // Redux state para API Client
+  const { workspaces, activeTabId: apiActiveTabId } = useAppSelector((state) => state.apiClient);
+
   const [requestPanelHeight, setRequestPanelHeight] = useState(50);
   const [isDraggingVertical, setIsDraggingVertical] = useState(false);
-  const [activeResponseTab, setActiveResponseTab] = useState('body');
+  const [response, setResponse] = useState<ResponseData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Busca request ativa do Redux
+  const getActiveRequest = () => {
+    if (!apiActiveTabId) return null;
+    for (const workspace of workspaces) {
+      const request = workspace.requests.find((r) => r.id === apiActiveTabId);
+      if (request) return request;
+    }
+    return null;
+  };
+
+  const activeRequest = getActiveRequest();
+
+  // Handler para atualizar requisição no Redux
+  const handleRequestChange = (data: RequestData) => {
+    if (!apiActiveTabId) return;
+    const activeReq = getActiveRequest();
+    dispatch(
+      updateRequest({
+        id: apiActiveTabId,
+        data,
+        folderId: activeReq?.folderId,
+      })
+    );
+  };
+
+  // Handler para enviar requisição
+  const handleSend = async () => {
+    if (!activeRequest) return;
+
+    setIsLoading(true);
+
+    try {
+      // Mock response (substituir por fetch real depois)
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const mockResponse: ResponseData = {
+        status: 201,
+        statusText: 'Created',
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Content-Length': '292',
+          Connection: 'keep-alive',
+          Date: new Date().toUTCString(),
+          Server: 'nginx/1.18.0',
+        },
+        body: JSON.stringify(
+          {
+            id: 101,
+            title: 'Test Post',
+            body: 'This is a test post',
+            userId: 1,
+          },
+          null,
+          2
+        ),
+        time: 789,
+        size: 292,
+
+        // Flow Test Engine execution data
+        curlCommand: `curl -X POST 'https://jsonplaceholder.typicode.com/posts' \\
+  -H 'Content-Type: application/json' \\
+  -H 'Accept: application/json' \\
+  -d '{
+  "title": "Test Post",
+  "body": "This is a test post",
+  "userId": 1
+}'`,
+
+        consoleLogs: [
+          {
+            timestamp: new Date().toISOString(),
+            level: 'info',
+            message: 'Starting request execution...',
+            source: 'system',
+          },
+          {
+            timestamp: new Date(Date.now() + 100).toISOString(),
+            level: 'info',
+            message: 'Computing variable: userId = 1',
+            source: 'pre-hook',
+          },
+          {
+            timestamp: new Date(Date.now() + 200).toISOString(),
+            level: 'debug',
+            message: 'Request headers prepared',
+            source: 'system',
+          },
+          {
+            timestamp: new Date(Date.now() + 789).toISOString(),
+            level: 'info',
+            message: 'Response received: 201 Created',
+            source: 'system',
+          },
+          {
+            timestamp: new Date(Date.now() + 800).toISOString(),
+            level: 'info',
+            message: 'Captured variable: postId = 101',
+            source: 'post-hook',
+          },
+          {
+            timestamp: new Date(Date.now() + 850).toISOString(),
+            level: 'info',
+            message: 'All assertions passed ✓',
+            source: 'assertion',
+          },
+        ],
+
+        assertionResults: [
+          {
+            path: 'response.status',
+            operator: 'equals',
+            passed: true,
+            message: 'Status code is 201',
+            expected: 201,
+            actual: 201,
+          },
+          {
+            path: 'response.body.id',
+            operator: 'exists',
+            passed: true,
+            message: 'ID exists and is greater than 0',
+            expected: true,
+            actual: 101,
+          },
+          {
+            path: 'response.body.title',
+            operator: 'equals',
+            passed: true,
+            message: 'Title matches expected value',
+            expected: 'Test Post',
+            actual: 'Test Post',
+          },
+          {
+            path: 'response.headers.Content-Type',
+            operator: 'contains',
+            passed: true,
+            message: 'Content-Type is application/json',
+            expected: 'application/json',
+            actual: 'application/json; charset=utf-8',
+          },
+        ],
+
+        capturedVariables: {
+          postId: 101,
+          userId: 1,
+          timestamp: new Date().toISOString(),
+          responseTime: 789,
+        },
+      };
+
+      setResponse(mockResponse);
+    } catch (error) {
+      console.error('Request error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Inicializar dados de exemplo
   useEffect(() => {
@@ -690,74 +429,7 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
 
   const handleRequestClick = (requestId: string) => {
     dispatch(setSelectedRequest(requestId));
-
-    // Encontrar o request no mock data
-    let foundRequest: { id: string; name: string; method: string; url?: string } | null = null;
-    for (const collection of mockCollections) {
-      const req = collection.requests.find((r) => r.id === requestId);
-      if (req) {
-        foundRequest = req;
-        break;
-      }
-      // Verificar em folders também
-      for (const folder of collection.folders) {
-        const req = folder.requests.find((r) => r.id === requestId);
-        if (req) {
-          foundRequest = req;
-          break;
-        }
-      }
-    }
-
-    if (foundRequest) {
-      // Verificar se já está aberto
-      const existingTab = openTabs.find((tab) => tab.id === requestId);
-      if (existingTab) {
-        setActiveTabId(requestId);
-      } else {
-        // Abrir nova tab
-        const newTab: OpenTab = {
-          id: requestId,
-          name: foundRequest.name,
-          method: foundRequest.method,
-          url: foundRequest.url || 'https://api.example.com/endpoint',
-        };
-        setOpenTabs([...openTabs, newTab]);
-        setActiveTabId(requestId);
-        setCurrentMethod(foundRequest.method);
-        setCurrentUrl(foundRequest.url || 'https://api.example.com/endpoint');
-      }
-    }
-  };
-
-  const closeTab = (tabId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newTabs = openTabs.filter((tab) => tab.id !== tabId);
-    setOpenTabs(newTabs);
-
-    if (activeTabId === tabId) {
-      setActiveTabId(newTabs.length > 0 ? newTabs[newTabs.length - 1].id : null);
-    }
-  };
-
-  const switchTab = (tabId: string) => {
-    setActiveTabId(tabId);
-    const tab = openTabs.find((t) => t.id === tabId);
-    if (tab) {
-      setCurrentMethod(tab.method);
-      setCurrentUrl(tab.url);
-    }
-  };
-
-  const getMethodColor = (method: string) => {
-    const colors: Record<string, string> = {
-      GET: '#059669',
-      POST: '#8e44ad',
-      PUT: '#546de5',
-      DELETE: '#b91c1c',
-      PATCH: '#343434',
-    };
-    return colors[method] || '#999';
+    // Request handling is now managed by Redux apiClientSlice
   };
 
   const getSidebarViewProps = () => {
@@ -784,149 +456,23 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
       <MainSection>
         {children ? (
           <ContentArea>{children}</ContentArea>
-        ) : openTabs.length > 0 ? (
-          <>
-            <TabsContainer>
-              {openTabs.map((tab) => (
-                <Tab key={tab.id} $active={activeTabId === tab.id} onClick={() => switchTab(tab.id)}>
-                  <span className="tab-method" style={{ background: getMethodColor(tab.method) }}>
-                    {tab.method}
-                  </span>
-                  <span>{tab.name}</span>
-                  <span className="tab-close" onClick={(e) => closeTab(tab.id, e)}>
-                    ✕
-                  </span>
-                </Tab>
-              ))}
-            </TabsContainer>
+        ) : activeRequest ? (
+          <ContentArea className="content-area">
+            <ResizablePanel $height={requestPanelHeight}>
+              <RequestPane
+                request={activeRequest.data}
+                onChange={handleRequestChange}
+                onSend={handleSend}
+                onSave={() => console.log('Save request')}
+                isLoading={isLoading}
+              />
+              <ResizeHandle onMouseDown={handleVerticalDragStart} />
+            </ResizablePanel>
 
-            <ContentArea className="content-area">
-              <RequestPanel $height={requestPanelHeight}>
-                <PanelHeader>
-                  <div className="panel-title">
-                    <span className="panel-icon">📤</span>
-                    <span>Request</span>
-                  </div>
-                  <div className="panel-actions">
-                    <span className="panel-badge">{currentMethod}</span>
-                  </div>
-                </PanelHeader>
-
-                <URLBar>
-                  <select value={currentMethod} onChange={(e) => setCurrentMethod(e.target.value)}>
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                    <option value="PUT">PUT</option>
-                    <option value="DELETE">DELETE</option>
-                    <option value="PATCH">PATCH</option>
-                  </select>
-
-                  <div className="url-input-group">
-                    <span className="url-icon">🔗</span>
-                    <input
-                      type="text"
-                      value={currentUrl}
-                      onChange={(e) => setCurrentUrl(e.target.value)}
-                      placeholder="Enter request URL"
-                    />
-                  </div>
-
-                  <button>Send</button>
-                </URLBar>
-
-                <RequestTabs>
-                  <RequestTab $active={activeRequestTab === 'params'} onClick={() => setActiveRequestTab('params')}>
-                    Params
-                  </RequestTab>
-                  <RequestTab $active={activeRequestTab === 'headers'} onClick={() => setActiveRequestTab('headers')}>
-                    Headers
-                  </RequestTab>
-                  <RequestTab $active={activeRequestTab === 'body'} onClick={() => setActiveRequestTab('body')}>
-                    Body
-                  </RequestTab>
-                  <RequestTab $active={activeRequestTab === 'auth'} onClick={() => setActiveRequestTab('auth')}>
-                    Auth
-                  </RequestTab>
-                </RequestTabs>
-
-                <RequestBody>
-                  {activeRequestTab === 'params' && (
-                    <EmptyState>
-                      <div className="icon">🔍</div>
-                      <div>No query parameters</div>
-                    </EmptyState>
-                  )}
-                  {activeRequestTab === 'headers' && (
-                    <EmptyState>
-                      <div className="icon">📋</div>
-                      <div>No headers</div>
-                    </EmptyState>
-                  )}
-                  {activeRequestTab === 'body' && (
-                    <EmptyState>
-                      <div className="icon">📄</div>
-                      <div>No body</div>
-                    </EmptyState>
-                  )}
-                  {activeRequestTab === 'auth' && (
-                    <EmptyState>
-                      <div className="icon">🔐</div>
-                      <div>No authorization</div>
-                    </EmptyState>
-                  )}
-                </RequestBody>
-              </RequestPanel>
-
-              <VerticalDragHandle onMouseDown={handleVerticalDragStart} />
-
-              <ResponsePanel>
-                <PanelHeader>
-                  <div className="panel-title">
-                    <span className="panel-icon">📥</span>
-                    <span>Response</span>
-                  </div>
-                  <div className="panel-actions">
-                    <span className="panel-badge">Ready</span>
-                  </div>
-                </PanelHeader>
-
-                <ResponseTabs>
-                  <RequestTab $active={activeResponseTab === 'body'} onClick={() => setActiveResponseTab('body')}>
-                    Body
-                  </RequestTab>
-                  <RequestTab $active={activeResponseTab === 'headers'} onClick={() => setActiveResponseTab('headers')}>
-                    Headers
-                  </RequestTab>
-                  <RequestTab $active={activeResponseTab === 'console'} onClick={() => setActiveResponseTab('console')}>
-                    Console
-                  </RequestTab>
-                </ResponseTabs>
-
-                <ResponseBody>
-                  {activeResponseTab === 'body' && (
-                    <EmptyState>
-                      <div className="icon">📡</div>
-                      <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '8px', color: 'inherit' }}>
-                        Hit Send to execute the request
-                      </div>
-                    </EmptyState>
-                  )}
-                  {activeResponseTab === 'headers' && (
-                    <EmptyState>
-                      <div className="icon">📋</div>
-                      <div>No response yet</div>
-                    </EmptyState>
-                  )}
-                  {activeResponseTab === 'console' && (
-                    <EmptyState>
-                      <div className="icon">💬</div>
-                      <div>No console logs</div>
-                    </EmptyState>
-                  )}
-                </ResponseBody>
-              </ResponsePanel>
-            </ContentArea>
-          </>
+            <BottomPanel>
+              <ResponsePane response={response} isLoading={isLoading} />
+            </BottomPanel>
+          </ContentArea>
         ) : (
           <WelcomeScreen>
             <div className="icon">🚀</div>

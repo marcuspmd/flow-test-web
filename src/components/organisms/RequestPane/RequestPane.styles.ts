@@ -58,6 +58,30 @@ export const UrlInput = styled.input`
   }
 `;
 
+export const Input = styled.input`
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background: ${({ theme }) => theme['primary-theme']};
+  color: ${({ theme }) => theme['primary-text']};
+  font-size: 13px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+
+  &:focus {
+    outline: none;
+    border-color: #007acc;
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme['secondary-text']};
+  }
+
+  &[type='password'] {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+`;
+
 export const SendButton = styled.button`
   padding: 8px 24px;
   background: #007acc;

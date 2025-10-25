@@ -70,12 +70,101 @@ const saveToStorage = (workspaces: APIWorkspace[]) => {
 const initializeWorkspaces = (): APIWorkspace[] => {
   const stored = loadFromStorage();
   if (stored.length === 0) {
+    // Criar requisição mockada com todos os recursos para demonstração
+    const mockRequest: APIRequest = {
+      id: `req_${Date.now()}`,
+      name: 'Example API Request',
+      description: 'Demonstração completa do Flow Test com Assertions, Hooks e YAML',
+      data: {
+        method: 'POST',
+        url: 'https://jsonplaceholder.typicode.com/posts',
+        params: [{ id: '1', key: 'userId', value: '1', enabled: true }],
+        headers: [
+          { id: '1', key: 'Content-Type', value: 'application/json', enabled: true },
+          { id: '2', key: 'Accept', value: 'application/json', enabled: true },
+        ],
+        body: {
+          type: 'json',
+          content: `{
+  "title": "Test Post",
+  "body": "This is a test post",
+  "userId": 1
+}`,
+        },
+        auth: {
+          type: 'bearer',
+          config: {
+            token: 'your-api-token-here',
+          },
+        },
+        // Assertions completas
+        assertions: {
+          status_code: 201,
+          body: {
+            id: { exists: true, type: 'number' },
+            title: { equals: 'Test Post' },
+            body: { notEmpty: true },
+            userId: { equals: 1 },
+          },
+          headers: {
+            'content-type': { contains: 'application/json' },
+          },
+          response_time_ms: {
+            less_than: 2000,
+          },
+          custom: [
+            {
+              name: 'Check Status Created',
+              condition: 'response.status === 201',
+              severity: 'error',
+              message: 'Expected 201 Created status',
+            },
+          ],
+        },
+        // Pre-request hooks
+        pre_hooks: [
+          {
+            compute: {
+              timestamp: '{{$timestamp}}',
+              randomId: '{{$randomInt}}',
+            },
+          },
+          {
+            log: {
+              message: 'Iniciando requisição para criar post',
+              level: 'info',
+            },
+          },
+        ],
+        // Post-request hooks
+        post_hooks: [
+          {
+            capture: {
+              postId: 'id',
+              postTitle: 'title',
+            },
+          },
+          {
+            exports: ['CREATED_POST_ID'],
+          },
+          {
+            log: {
+              message: 'Post criado com ID: {{postId}}',
+              level: 'info',
+            },
+          },
+        ],
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
     const defaultWorkspace: APIWorkspace = {
       id: `ws_${Date.now()}`,
       name: 'My Workspace',
-      description: 'Default workspace',
+      description: 'Default workspace with example requests',
       folders: [],
-      requests: [],
+      requests: [mockRequest],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -84,12 +173,22 @@ const initializeWorkspaces = (): APIWorkspace[] => {
   return stored;
 };
 
+// Helper para obter primeira requisição do workspace
+const getFirstRequestId = (): string | null => {
+  const workspaces = initializeWorkspaces();
+  const firstWorkspace = workspaces[0];
+  if (firstWorkspace && firstWorkspace.requests.length > 0) {
+    return firstWorkspace.requests[0].id;
+  }
+  return null;
+};
+
 const initialState: APIClientState = {
   workspaces: initializeWorkspaces(),
   activeWorkspaceId: initializeWorkspaces()[0]?.id || null,
-  activeRequestId: null,
-  openTabs: [],
-  activeTabId: null,
+  activeRequestId: getFirstRequestId(),
+  openTabs: getFirstRequestId() ? [getFirstRequestId()!] : [],
+  activeTabId: getFirstRequestId(),
   loading: false,
   error: null,
 };

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import * as S from './ResponsePane.styles';
+import type { AssertionResult } from '../../../types/flow-test.types';
 
-export type ResponseTab = 'Body' | 'Headers' | 'Cookies' | 'Timeline' | 'Tests';
+export type ResponseTab = 'Body' | 'Headers' | 'Cookies' | 'Console' | 'cURL' | 'Assertions';
 
 export interface ResponseData {
   status: number;
@@ -11,6 +12,19 @@ export interface ResponseData {
   size: number;
   time: number;
   cookies?: Array<{ name: string; value: string; domain: string }>;
+
+  // Flow Test Engine execution data
+  curlCommand?: string;
+  consoleLogs?: Array<{
+    timestamp: string;
+    level: 'info' | 'warn' | 'error' | 'debug';
+    message: string;
+    source?: 'pre-hook' | 'post-hook' | 'assertion' | 'system';
+  }>;
+  assertionResults?: AssertionResult[];
+  capturedVariables?: Record<string, unknown>;
+
+  // Legacy fields (to be removed)
   timeline?: Array<{
     name: string;
     duration: number;
@@ -34,6 +48,8 @@ export const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading 
   const [activeTab, setActiveTab] = useState<ResponseTab>('Body');
   const [bodyViewType, setBodyViewType] = useState<BodyViewType>('pretty');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isPrettified, setIsPrettified] = useState(true);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const formatBytes = (bytes: number): string => {
     if (bytes === 0) return '0 B';
@@ -54,12 +70,68 @@ export const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading 
     return 'info';
   };
 
-  const formatJSON = (json: string): string => {
+  const formatJSON = (json: string, prettify: boolean = true): string => {
     try {
-      return JSON.stringify(JSON.parse(json), null, 2);
+      const parsed = JSON.parse(json);
+      return prettify ? JSON.stringify(parsed, null, 2) : JSON.stringify(parsed);
     } catch {
       return json;
     }
+  };
+
+  const formatXML = (xml: string, prettify: boolean = true): string => {
+    if (!prettify) {
+      return xml.replace(/>\s+</g, '><').trim();
+    }
+
+    try {
+      const PADDING = '  ';
+      const reg = /(>)(<)(\/*)/g;
+      let formatted = xml.replace(reg, '$1\n$2$3');
+      let pad = 0;
+
+      formatted = formatted
+        .split('\n')
+        .map((line) => {
+          let indent = 0;
+          if (line.match(/.+<\/\w[^>]*>$/)) {
+            indent = 0;
+          } else if (line.match(/^<\/\w/)) {
+            if (pad !== 0) {
+              pad -= 1;
+            }
+          } else if (line.match(/^<\w[^>]*[^/]>.*$/)) {
+            indent = 1;
+          } else {
+            indent = 0;
+          }
+
+          const padding = PADDING.repeat(pad);
+          pad += indent;
+
+          return padding + line;
+        })
+        .join('\n');
+
+      return formatted;
+    } catch {
+      return xml;
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    if (!response) return;
+    try {
+      await navigator.clipboard.writeText(response.body);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const togglePrettify = () => {
+    setIsPrettified(!isPrettified);
   };
 
   const getContentType = (headers: Record<string, string>): string => {
@@ -83,6 +155,7 @@ export const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading 
     if (!response) return null;
 
     const contentType = getContentType(response.headers);
+    let displayContent = response.body;
 
     if (bodyViewType === 'raw') {
       return <S.CodeBlock>{response.body}</S.CodeBlock>;
@@ -100,16 +173,23 @@ export const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading 
       );
     }
 
-    // Pretty view
-    if (isJSON(contentType)) {
-      return <S.CodeBlock>{formatJSON(response.body)}</S.CodeBlock>;
+    // Pretty view - apply formatting based on content type and prettify state
+    if (isPrettified) {
+      if (isJSON(contentType)) {
+        displayContent = formatJSON(response.body, true);
+      } else if (isXML(contentType)) {
+        displayContent = formatXML(response.body, true);
+      }
+    } else {
+      // Minified view
+      if (isJSON(contentType)) {
+        displayContent = formatJSON(response.body, false);
+      } else if (isXML(contentType)) {
+        displayContent = formatXML(response.body, false);
+      }
     }
 
-    if (isXML(contentType) || isHTML(contentType)) {
-      return <S.CodeBlock>{response.body}</S.CodeBlock>;
-    }
-
-    return <S.CodeBlock>{response.body}</S.CodeBlock>;
+    return <S.CodeBlock>{displayContent}</S.CodeBlock>;
   };
 
   const renderTabContent = () => {
@@ -146,7 +226,22 @@ export const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading 
               </S.BodyTypeSelector>
 
               <S.BodyActions>
-                <button onClick={() => navigator.clipboard.writeText(response.body)}>📋 Copy</button>
+                {bodyViewType === 'pretty' &&
+                  (isJSON(getContentType(response.headers)) || isXML(getContentType(response.headers))) && (
+                    <button
+                      onClick={togglePrettify}
+                      title={isPrettified ? 'Minify' : 'Prettify'}
+                      style={{
+                        fontWeight: 600,
+                        color: isPrettified ? '#27ae60' : '#e67e22',
+                      }}
+                    >
+                      {isPrettified ? '⚡ Minify' : '✨ Prettify'}
+                    </button>
+                  )}
+                <button onClick={handleCopyToClipboard} style={{ fontWeight: copySuccess ? 600 : 400 }}>
+                  {copySuccess ? '✓ Copied!' : '📋 Copy'}
+                </button>
                 <button
                   onClick={() => {
                     const blob = new Blob([response.body], { type: 'text/plain' });
@@ -246,52 +341,157 @@ export const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading 
           </div>
         );
 
-      case 'Timeline':
+      case 'Console':
         return (
           <div>
-            {response.timeline && response.timeline.length > 0 ? (
-              response.timeline.map((item, idx) => (
-                <S.TimelineItem key={idx}>
-                  <div className="timeline-header">
-                    <span className="timeline-title">{item.name}</span>
-                    <span className="timeline-duration">{formatTime(item.duration)}</span>
+            {response.consoleLogs && response.consoleLogs.length > 0 ? (
+              <div style={{ padding: '12px', fontFamily: 'Monaco, Menlo, monospace', fontSize: '12px' }}>
+                {response.consoleLogs.map((log, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: '8px 12px',
+                      marginBottom: '4px',
+                      borderLeft: `3px solid ${
+                        log.level === 'error'
+                          ? '#e74c3c'
+                          : log.level === 'warn'
+                            ? '#f39c12'
+                            : log.level === 'debug'
+                              ? '#95a5a6'
+                              : '#3498db'
+                      }`,
+                      backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                      borderRadius: '2px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'baseline' }}>
+                      <span style={{ opacity: 0.6, fontSize: '11px' }}>{log.timestamp}</span>
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          textTransform: 'uppercase',
+                          fontSize: '10px',
+                          color:
+                            log.level === 'error'
+                              ? '#e74c3c'
+                              : log.level === 'warn'
+                                ? '#f39c12'
+                                : log.level === 'debug'
+                                  ? '#95a5a6'
+                                  : '#3498db',
+                        }}
+                      >
+                        {log.level}
+                      </span>
+                      {log.source && <span style={{ opacity: 0.5, fontSize: '11px' }}>[{log.source}]</span>}
+                    </div>
+                    <div style={{ marginTop: '4px' }}>{log.message}</div>
                   </div>
-                  {item.details && <div className="timeline-details">{item.details}</div>}
-                </S.TimelineItem>
-              ))
+                ))}
+              </div>
             ) : (
               <S.EmptyState>
-                <div className="icon">⏱️</div>
-                <p>No timeline data available</p>
+                <div className="icon">📝</div>
+                <p>No console logs available</p>
+                <small style={{ opacity: 0.7, marginTop: '8px' }}>
+                  Logs from hooks, validations, and custom scripts will appear here
+                </small>
               </S.EmptyState>
             )}
           </div>
         );
 
-      case 'Tests':
+      case 'cURL':
+        return (
+          <div style={{ padding: '16px' }}>
+            {response.curlCommand ? (
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px',
+                  }}
+                >
+                  <span style={{ fontSize: '13px', fontWeight: 600 }}>cURL Command</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(response.curlCommand || '');
+                      // TODO: Show toast notification
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      background: '#007acc',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    📋 Copy to Clipboard
+                  </button>
+                </div>
+                <pre
+                  style={{
+                    padding: '16px',
+                    background: 'rgba(0, 0, 0, 0.05)',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontFamily: 'Monaco, Menlo, monospace',
+                    overflow: 'auto',
+                    lineHeight: '1.6',
+                  }}
+                >
+                  {response.curlCommand}
+                </pre>
+              </div>
+            ) : (
+              <S.EmptyState>
+                <div className="icon">⚡</div>
+                <p>No cURL command available</p>
+                <small style={{ opacity: 0.7, marginTop: '8px' }}>
+                  Send a request to generate the equivalent cURL command
+                </small>
+              </S.EmptyState>
+            )}
+          </div>
+        );
+
+      case 'Assertions':
         return (
           <div>
-            {response.tests && response.tests.length > 0 ? (
+            {response.assertionResults && response.assertionResults.length > 0 ? (
               <div style={{ padding: '16px' }}>
-                {response.tests.map((test, idx) => (
+                {response.assertionResults.map((result, idx) => (
                   <div
                     key={idx}
                     style={{
                       padding: '12px',
-                      marginBottom: '8px',
-                      borderRadius: '4px',
-                      border: '1px solid rgba(0,0,0,0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
+                      marginBottom: '12px',
+                      borderRadius: '6px',
+                      border: `1px solid ${result.passed ? '#27ae60' : '#e74c3c'}`,
+                      backgroundColor: result.passed ? 'rgba(39, 174, 96, 0.05)' : 'rgba(231, 76, 60, 0.05)',
                     }}
                   >
-                    <span style={{ fontSize: '20px' }}>{test.passed ? '✅' : '❌'}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: '13px' }}>{test.name}</div>
-                      {test.message && (
-                        <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>{test.message}</div>
-                      )}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                      <span style={{ fontSize: '20px', flexShrink: 0 }}>{result.passed ? '✓' : '✗'}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '4px' }}>{result.path}</div>
+                        <div style={{ fontSize: '12px', opacity: 0.8 }}>{result.message}</div>
+                        {!result.passed && result.expected !== undefined && result.actual !== undefined && (
+                          <div style={{ marginTop: '8px', fontSize: '12px', fontFamily: 'Monaco, Menlo, monospace' }}>
+                            <div style={{ opacity: 0.7 }}>
+                              <strong>Expected:</strong> {JSON.stringify(result.expected)}
+                            </div>
+                            <div style={{ opacity: 0.7, marginTop: '4px' }}>
+                              <strong>Actual:</strong> {JSON.stringify(result.actual)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -299,7 +499,10 @@ export const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading 
             ) : (
               <S.EmptyState>
                 <div className="icon">✓</div>
-                <p>No test results available</p>
+                <p>No assertion results available</p>
+                <small style={{ opacity: 0.7, marginTop: '8px' }}>
+                  Add assertions in the Request panel and send a request to see results
+                </small>
               </S.EmptyState>
             )}
           </div>
@@ -310,7 +513,7 @@ export const ResponsePane: React.FC<ResponsePaneProps> = ({ response, isLoading 
     }
   };
 
-  const tabs: ResponseTab[] = ['Body', 'Headers', 'Cookies', 'Timeline', 'Tests'];
+  const tabs: ResponseTab[] = ['Body', 'Headers', 'Cookies', 'Console', 'cURL', 'Assertions'];
 
   if (isLoading) {
     return (
