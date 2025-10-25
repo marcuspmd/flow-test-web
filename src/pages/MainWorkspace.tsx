@@ -3,10 +3,7 @@ import styled from 'styled-components';
 import {
   MiniSidebar,
   SidebarContentArea,
-  CollectionsView,
-  EnvironmentsView,
-  HistoryView,
-  SettingsView,
+  SidebarViewRenderer,
 } from '../components/organisms/Sidebar';
 import { useAppDispatch, useAppSelector } from '../store';
 import { setCollections, setSelectedRequest, setActiveView } from '../store/slices/sidebarSlice';
@@ -763,18 +760,15 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
     return colors[method] || '#999';
   };
 
-  const renderSidebarView = () => {
+  const getSidebarViewProps = () => {
     switch (activeView) {
       case 'collections':
-        return <CollectionsView onCreateCollection={handleCreateCollection} onRequestClick={handleRequestClick} />;
-      case 'environments':
-        return <EnvironmentsView />;
-      case 'history':
-        return <HistoryView />;
-      case 'settings':
-        return <SettingsView />;
+        return {
+          onCreateCollection: handleCreateCollection,
+          onRequestClick: handleRequestClick,
+        };
       default:
-        return <CollectionsView onCreateCollection={handleCreateCollection} onRequestClick={handleRequestClick} />;
+        return {};
     }
   };
 
@@ -782,7 +776,9 @@ export default function MainWorkspace({ children }: MainWorkspaceProps) {
     <WorkspaceWrapper>
       <SidebarContainer>
         <MiniSidebar activeView={activeView} onViewChange={handleViewChange} />
-        <SidebarContentArea activeView={activeView}>{renderSidebarView()}</SidebarContentArea>
+        <SidebarContentArea activeView={activeView}>
+          <SidebarViewRenderer activeView={activeView} viewProps={getSidebarViewProps()} />
+        </SidebarContentArea>
       </SidebarContainer>
 
       <MainSection>
