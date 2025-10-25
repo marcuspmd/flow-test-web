@@ -20,6 +20,12 @@ const initialState: SidebarState = {
   selectedRequestId: undefined,
   sidebarWidth: 280,
   isCollapsed: false,
+  viewStates: {
+    collections: {},
+    environments: {},
+    history: {},
+    settings: {},
+  },
 };
 
 const sidebarSlice = createSlice({
@@ -97,6 +103,13 @@ const sidebarSlice = createSlice({
     setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
       state.isCollapsed = action.payload;
     },
+
+    updateViewState: (state, action: PayloadAction<{ viewId: SidebarView; state: Record<string, unknown> }>) => {
+      state.viewStates[action.payload.viewId] = {
+        ...state.viewStates[action.payload.viewId],
+        ...action.payload.state,
+      };
+    },
   },
 });
 
@@ -115,6 +128,7 @@ export const {
   setSidebarWidth,
   toggleSidebarCollapse,
   setSidebarCollapsed,
+  updateViewState,
 } = sidebarSlice.actions;
 
 export default sidebarSlice.reducer;

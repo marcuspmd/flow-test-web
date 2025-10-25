@@ -63,6 +63,7 @@ export interface SidebarState {
   selectedRequestId?: string;
   sidebarWidth: number;
   isCollapsed: boolean;
+  viewStates: Record<SidebarView, Record<string, unknown>>;
 }
 
 export interface SidebarTabConfig {
