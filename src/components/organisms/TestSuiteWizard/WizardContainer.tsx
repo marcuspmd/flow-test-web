@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { updateTestSuiteData } from '../../../store/slices/testSuiteEditorSlice';
+import { TestSuiteWizardData } from './types';
 
 // Step components (to be created)
 import BasicInfoStep from './steps/BasicInfoStep';
@@ -16,7 +17,7 @@ export interface WizardStepConfig {
   description: string;
   component: React.ComponentType<WizardStepProps>;
   isOptional?: boolean;
-  validate?: (data: any) => ValidationResult;
+  validate?: (data: TestSuiteWizardData) => ValidationResult;
 }
 
 export interface ValidationResult {
@@ -25,8 +26,8 @@ export interface ValidationResult {
 }
 
 export interface WizardStepProps {
-  data: any;
-  onUpdate: (updates: any) => void;
+  data: TestSuiteWizardData;
+  onUpdate: (updates: Partial<TestSuiteWizardData>) => void;
   onValidation?: (result: ValidationResult) => void;
 }
 
@@ -215,7 +216,7 @@ export const WizardContainer: React.FC = () => {
     }
   };
 
-  const handleUpdate = (updates: any) => {
+  const handleUpdate = (updates: Partial<TestSuiteWizardData>) => {
     dispatch(updateTestSuiteData(updates));
   };
 

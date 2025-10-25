@@ -1,17 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { WizardStepProps } from '../WizardContainer';
-
-interface TestStep {
-  name: string;
-  step_id?: string;
-  request?: {
-    method: string;
-    url: string;
-    headers?: Record<string, string>;
-    body?: string;
-  };
-}
+import { TestStep } from '../types';
 
 const StepContainer = styled.div`
   max-width: 800px;
@@ -303,7 +293,7 @@ const StepsBuilderStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValidat
                       value={step.request?.method || 'GET'}
                       onChange={(e) =>
                         handleUpdateStep(index, {
-                          request: { ...step.request!, method: e.target.value },
+                          request: { ...(step.request || { url: '' }), method: e.target.value },
                         })
                       }
                     >
@@ -323,7 +313,7 @@ const StepsBuilderStep: React.FC<WizardStepProps> = ({ data, onUpdate, onValidat
                       value={step.request?.url || ''}
                       onChange={(e) =>
                         handleUpdateStep(index, {
-                          request: { ...step.request!, url: e.target.value },
+                          request: { ...(step.request || { method: 'GET' }), url: e.target.value },
                         })
                       }
                       placeholder="/api/login"

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { WizardStepProps } from '../WizardContainer';
+import { TestStep } from '../types';
 
 const StepContainer = styled.div`
   max-width: 800px;
@@ -116,8 +117,8 @@ const ValidationBadge = styled.div<{ $valid: boolean }>`
 `;
 
 const ReviewStep: React.FC<WizardStepProps> = ({ data, onValidation }) => {
-  const hasRequiredFields = data?.suite_name && data?.node_id;
-  const hasSteps = data?.steps && data.steps.length > 0;
+  const hasRequiredFields = Boolean(data?.suite_name && data?.node_id);
+  const hasSteps = Boolean(data?.steps && data.steps.length > 0);
   const isValid = hasRequiredFields && hasSteps;
 
   useEffect(() => {
@@ -183,7 +184,7 @@ const ReviewStep: React.FC<WizardStepProps> = ({ data, onValidation }) => {
             {data?.steps?.length || 0} step(s)
             {data?.steps && data.steps.length > 0 && (
               <StepsList>
-                {data.steps.map((step: any, index: number) => (
+                {data.steps.map((step: TestStep, index: number) => (
                   <StepItem key={index}>
                     <MethodBadge method={step.request?.method || 'GET'}>
                       {step.request?.method || 'GET'}
