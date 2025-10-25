@@ -11,10 +11,15 @@ import {
   resetEditor,
   EditorMode,
   setTestSuiteData,
+  updateYAMLContent,
+  restoreFromAutoSave,
+  markClean,
 } from '../store/slices/testSuiteEditorSlice';
 import * as yaml from 'js-yaml';
 import { YAMLEditor } from '../components/organisms/YAMLEditor';
 import { WizardContainer } from '../components/organisms/TestSuiteWizard';
+import { VisualFormBuilder } from '../components/organisms/VisualFormBuilder';
+import { useAutoSave, restoreAutoSave, clearAutoSave, hasAutoSave } from '../hooks/useAutoSave';
 
 const PageContainer = styled.div`
   display: flex;
@@ -286,14 +291,87 @@ const YAMLEditorContainer = styled.div`
   background: ${({ theme }) => theme['primary-theme']};
 `;
 
+const DirtyIndicator = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: ${({ theme }) => theme.brand};
+  
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: ${({ theme }) => theme.brand};
+  }
+`;
+
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: ${({ theme }) => theme['sidebar-background']};
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+`;
+
+const ModalHeader = styled.h2`
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: ${({ theme }) => theme['primary-text']};
+`;
+
+const ModalText = styled.p`
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  color: ${({ theme }) => theme['secondary-text']};
+  line-height: 1.6;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+`;
+
 export default function NewTestSuitePage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { mode, currentData, generatedYAML, previewPanelWidth, isDirty } = useAppSelector(
+  const { mode, currentData, generatedYAML, previewPanelWidth, isDirty, wizardData, formData } = useAppSelector(
     (state) => state.testSuiteEditor
   );
 
   const [isDragging, setIsDragging] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [autoSaveData, setAutoSaveData] = useState<any>(null);
+
+  // Check for auto-saved data on mount
+  useEffect(() => {
+    if (hasAutoSave()) {
+      const savedData = restoreAutoSave();
+      if (savedData) {
+        setAutoSaveData(savedData);
+        setShowRestoreModal(true);
+      }
+    }
+  }, []);
+
+  // Auto-save hook - saves current state to localStorage
+  const testSuiteName = formData.suite_name || wizardData.suite_name || currentData.name;
+  useAutoSave(mode, generatedYAML, testSuiteName);
 
   // Generate YAML from current data
   useEffect(() => {
@@ -306,6 +384,21 @@ export default function NewTestSuitePage() {
     }
   }, [currentData, dispatch]);
 
+  const handleRestoreAutoSave = () => {
+    if (autoSaveData) {
+      dispatch(restoreFromAutoSave({
+        mode: autoSaveData.mode,
+        yamlContent: autoSaveData.yamlContent,
+      }));
+    }
+    setShowRestoreModal(false);
+  };
+
+  const handleDiscardAutoSave = () => {
+    clearAutoSave();
+    setShowRestoreModal(false);
+  };
+
   const handleModeChange = (newMode: EditorMode) => {
     dispatch(setMode(newMode));
   };
@@ -315,14 +408,16 @@ export default function NewTestSuitePage() {
       const confirmed = window.confirm('You have unsaved changes. Are you sure you want to leave?');
       if (!confirmed) return;
     }
+    clearAutoSave();
     dispatch(resetEditor());
     navigate(-1);
   };
 
   const handleSave = () => {
-    // TODO: Implement save logic
+    // TODO: Implement save logic (TASK_008)
     console.log('Saving test suite:', currentData);
-    alert('Save functionality will be implemented in future tasks');
+    alert('Save functionality will be implemented in TASK_008');
+    dispatch(markClean());
   };
 
   const handleExport = () => {
@@ -374,15 +469,7 @@ export default function NewTestSuitePage() {
   const editorWidth = 100 - previewPanelWidth;
 
   const handleYAMLChange = (newYaml: string) => {
-    try {
-      // Parse YAML to update currentData
-      const parsed = yaml.load(newYaml) as any;
-      dispatch(setTestSuiteData(parsed || {}));
-      dispatch(setGeneratedYAML(newYaml));
-    } catch (error) {
-      // Invalid YAML, just update the YAML string
-      dispatch(setGeneratedYAML(newYaml));
-    }
+    dispatch(updateYAMLContent(newYaml));
   };
 
   const renderModeContent = () => {
@@ -401,17 +488,7 @@ export default function NewTestSuitePage() {
           </YAMLEditorContainer>
         );
       case 'form':
-        return (
-          <PlaceholderContent>
-            <div className="icon">📋</div>
-            <h2>Visual Form Mode</h2>
-            <p>
-              Form-based test suite creation.
-              <br />
-              This will be implemented in TASK_006.
-            </p>
-          </PlaceholderContent>
-        );
+        return <VisualFormBuilder />;
       default:
         return null;
     }
@@ -419,6 +496,27 @@ export default function NewTestSuitePage() {
 
   return (
     <PageContainer>
+      {showRestoreModal && (
+        <Modal onClick={handleDiscardAutoSave}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <ModalHeader>Continue Editing?</ModalHeader>
+            <ModalText>
+              We found an unsaved test suite from{' '}
+              {autoSaveData && new Date(autoSaveData.timestamp).toLocaleString()}.
+              Would you like to continue editing it?
+            </ModalText>
+            <ModalActions>
+              <Button $variant="secondary" onClick={handleDiscardAutoSave}>
+                Discard
+              </Button>
+              <Button $variant="primary" onClick={handleRestoreAutoSave}>
+                Continue Editing
+              </Button>
+            </ModalActions>
+          </ModalContent>
+        </Modal>
+      )}
+
       <PageHeader>
         <HeaderLeft>
           <Breadcrumb>
@@ -426,7 +524,15 @@ export default function NewTestSuitePage() {
             <span>›</span>
             <span>New Test Suite</span>
           </Breadcrumb>
-          <PageTitle>New Test Suite</PageTitle>
+          <PageTitle>
+            New Test Suite
+            {isDirty && (
+              <DirtyIndicator>
+                <span className="dot"></span>
+                Unsaved changes
+              </DirtyIndicator>
+            )}
+          </PageTitle>
         </HeaderLeft>
 
         <ModeSelectorTabs>
